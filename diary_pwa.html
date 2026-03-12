@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="十年日記">
+<title>十年日記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #faf6ef;
+  --cream2: #f2ebe0;
+  --cream3: #e8dfd0;
+  --moss: #5a6e4e;
+  --moss2: #3d4f34;
+  --moss3: #8a9e7e;
+  --gold: #b8963e;
+  --gold2: #d4a843;
+  --ink: #2a2318;
+  --ink2: #4a3f30;
+  --ink3: #7a6e5e;
+  --red: #9e3a2a;
+  --paper: #fdf9f2;
+  --shadow: rgba(42,35,24,0.12);
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* 和紙テクスチャ背景 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ヘッダー */
+#header {
+  background: var(--moss2);
+  color: var(--cream);
+  padding: 12px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 2px 8px var(--shadow);
+  flex-shrink: 0;
+}
+.header-title {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+.header-date {
+  font-size: 0.75rem;
+  color: var(--moss3);
+  letter-spacing: 0.05em;
+}
+
+/* メインコンテンツ */
+#main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 1;
+}
+
+/* ビュー共通 */
+.view { display: none; padding: 16px; }
+.view.on { display: block; }
+
+/* ナビゲーション */
+#nav {
+  background: var(--paper);
+  border-top: 1px solid var(--cream3);
+  display: flex;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  box-shadow: 0 -2px 8px var(--shadow);
+}
+.ntab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  font-size: 0.6rem;
+  color: var(--ink3);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  gap: 2px;
+}
+.ntab .icon { font-size: 1.3rem; }
+.ntab.on { color: var(--moss2); }
+.ntab.on .icon { transform: scale(1.1); }
+
+/* ========== ホーム ========== */
+.home-hero {
+  background: linear-gradient(135deg, var(--moss2) 0%, var(--moss) 100%);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: var(--cream);
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.home-hero::after {
+  content: '📔';
+  position: absolute;
+  right: 16px;
+  bottom: -4px;
+  font-size: 4rem;
+  opacity: 0.2;
+}
+.home-hero-date {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.home-hero-sub { font-size: 0.8rem; color: var(--moss3); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 14px;
+  text-align: center;
+  border: 1px solid var(--cream3);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.stat-num {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--moss2);
+  display: block;
+}
+.stat-label { font-size: 0.7rem; color: var(--ink3); }
+
+.section-title {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 0.9rem;
+  color: var(--moss2);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--cream3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.entry-card {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--cream3);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 1px 3px var(--shadow);
+}
+.entry-card:active { transform: scale(0.98); background: var(--cream2); }
+.entry-date {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 0.85rem;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.entry-preview {
+  font-size: 0.8rem;
+  color: var(--ink2);
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.entry-photo-badge {
+  font-size: 0.65rem;
+  color: var(--moss);
+  margin-top: 4px;
+}
+
+/* ========== 書く ========== */
+.write-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.date-nav-btn {
+  background: var(--cream2);
+  border: 1px solid var(--cream3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--ink2);
+}
+.date-display {
+  flex: 1;
+  text-align: center;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--moss2);
+}
+.date-input-wrap {
+  position: relative;
+}
+#wd {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  top: 0; left: 0;
+  cursor: pointer;
+}
+
+.form-card {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--cream3);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--moss2);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.form-label-input {
+  font-size: 0.75rem;
+  border: none;
+  background: var(--cream2);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: var(--moss2);
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-weight: 500;
+  flex: 1;
+  outline: none;
+}
+textarea, input[type="text"] {
+  width: 100%;
+  border: 1px solid var(--cream3);
+  border-radius: 8px;
+  padding: 10px;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--cream);
+  resize: none;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+textarea:focus, input[type="text"]:focus {
+  border-color: var(--moss3);
+  background: var(--paper);
+}
+textarea { line-height: 1.7; min-height: 80px; }
+#diary-area { min-height: 140px; }
+
+/* 写真セクション */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+.photo-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background: var(--cream2);
+}
+.photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-del {
+  position: absolute;
+  top: 3px; right: 3px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px; height: 20px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo-add-btn {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 2px dashed var(--cream3);
+  background: var(--cream);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink3);
+  font-size: 0.65rem;
+  gap: 4px;
+}
+.photo-add-btn .icon { font-size: 1.4rem; }
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+  -webkit-appearance: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn-p { background: var(--moss2); color: var(--cream); width: 100%; }
+.btn-s { background: var(--cream2); color: var(--ink2); border: 1px solid var(--cream3); }
+.btn-sm { padding: 8px 14px; font-size: 0.85rem; }
+.btn-danger { background: var(--red); color: white; }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.btn-row .btn { flex: 1; }
+
+/* ========== 10年 ========== */
+.decade-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.decade-date-btn {
+  background: var(--cream2);
+  border: 1px solid var(--cream3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--ink2);
+}
+.decade-date-display {
+  flex: 1;
+  text-align: center;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--moss2);
+}
+.decade-header {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--moss2);
+  margin-bottom: 12px;
+  text-align: center;
+}
+.decade-item {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid var(--cream3);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.decade-item:active { background: var(--cream2); }
+.decade-item.empty { opacity: 0.5; cursor: default; }
+.decade-year {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 48px;
+}
+.decade-text {
+  font-size: 0.82rem;
+  color: var(--ink2);
+  line-height: 1.5;
+  flex: 1;
+}
+.decade-empty { font-size: 0.8rem; color: var(--ink3); }
+
+/* ========== 検索 ========== */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.search-bar input {
+  flex: 1;
+}
+.search-bar button {
+  padding: 10px 16px;
+  background: var(--moss2);
+  color: var(--cream);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+.search-count {
+  font-size: 0.8rem;
+  color: var(--ink3);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* ========== データ ========== */
+.data-section {
+  background: var(--paper);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--cream3);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+.data-section-title {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--moss2);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--cream3);
+}
+.data-desc {
+  font-size: 0.78rem;
+  color: var(--ink3);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+.data-info {
+  font-size: 0.8rem;
+  color: var(--ink2);
+  margin-bottom: 12px;
+  padding: 10px;
+  background: var(--cream2);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+/* ========== モーダル ========== */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(42,35,24,0.6);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+#modal-overlay.on { display: flex; }
+#modal-box {
+  background: var(--paper);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px 36px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.modal-date {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--moss2);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--cream3);
+}
+.modal-section {
+  margin-bottom: 14px;
+}
+.modal-label {
+  font-size: 0.72rem;
+  color: var(--ink3);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.modal-text {
+  font-size: 0.88rem;
+  color: var(--ink);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.modal-imgs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+.modal-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.modal-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* 画像全画面 */
+#img-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+#img-modal.on { display: flex; }
+#img-modal img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* トースト */
+#toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--moss2);
+  color: var(--cream);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+#toast.on {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 空状態 */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink3);
+}
+.empty-icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-text { font-size: 0.85rem; line-height: 1.6; }
+
+/* 進捗バー */
+.progress-bar {
+  height: 4px;
+  background: var(--cream3);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--moss);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+#import-status {
+  font-size: 0.78rem;
+  color: var(--moss);
+  margin-top: 8px;
+  min-height: 1.2em;
+}
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--gold);
+  color: var(--paper);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-top: 6px;
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <div class="header-title">十 年 日 記</div>
+    <div class="header-date" id="hd"></div>
+  </div>
+  <div id="streak-disp"></div>
+</div>
+
+<div id="main">
+
+  <!-- ホーム -->
+  <div class="view on" id="view-home">
+    <div class="home-hero">
+      <div class="home-hero-date" id="today-jp"></div>
+      <div class="home-hero-sub" id="today-written">今日の日記を書きましょう</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-num" id="s1">0</span>
+        <span class="stat-label">総記録数</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="s2">0</span>
+        <span class="stat-label">今年の記録</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="s3">0</span>
+        <span class="stat-label">連続記録日</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="s4">0</span>
+        <span class="stat-label">記録年数</span>
+      </div>
+    </div>
+
+    <div class="section-title">📖 最近の記録</div>
+    <div id="recent-list">
+      <div class="empty-state">
+        <div class="empty-icon">📔</div>
+        <div class="empty-text">まだ日記がありません<br>下の「書く」から始めましょう</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 書く -->
+  <div class="view" id="view-write">
+    <div class="write-nav">
+      <button class="date-nav-btn" onclick="changeDate(-1)">◀</button>
+      <div class="date-display date-input-wrap">
+        <div id="wdd" onclick="document.getElementById('wd').click()"></div>
+        <input type="date" id="wd" onchange="loadEntry()">
+      </div>
+      <button class="date-nav-btn" onclick="changeDate(1)">▶</button>
+      <button class="date-nav-btn" onclick="setToday()" style="font-size:0.75rem;padding:8px;">今日</button>
+    </div>
+
+    <div class="form-card">
+      <div class="form-label">📅 今日の予定</div>
+      <textarea id="wp" rows="2" placeholder="今日の予定・出来事を記録"></textarea>
+    </div>
+
+    <div class="form-card">
+      <div class="form-label">
+        <input class="form-label-input" id="f1n" value="ひとこと">
+      </div>
+      <textarea id="f1" rows="2" placeholder="ひとことメモ"></textarea>
+    </div>
+
+    <div class="form-card">
+      <div class="form-label">
+        <input class="form-label-input" id="f2n" value="気づき・学び">
+      </div>
+      <textarea id="f2" rows="2" placeholder="気づき・学んだこと"></textarea>
+    </div>
+
+    <div class="form-card">
+      <div class="form-label">
+        <input class="form-label-input" id="f3n" value="感謝したこと">
+      </div>
+      <textarea id="f3" rows="2" placeholder="今日感謝したこと"></textarea>
+    </div>
+
+    <div class="form-card">
+      <div class="form-label">📝 日記</div>
+      <textarea id="diary-area" placeholder="今日の出来事、思ったことを自由に…"></textarea>
+    </div>
+
+    <div class="form-card">
+      <div class="form-label">📷 写真</div>
+      <div class="photo-grid" id="photo-grid">
+        <div class="photo-add-btn" onclick="document.getElementById('photo-input').click()">
+          <span class="icon">＋</span>
+          <span>追加</span>
+        </div>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="addPhotos(event)">
+    </div>
+
+    <div class="form-card">
+      <div class="form-label">🎬 動画リンク</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input type="text" id="vi" placeholder="URLを入力">
+        <button class="btn btn-s btn-sm" onclick="addVideo()">追加</button>
+      </div>
+      <div id="vtags"></div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:32px;">
+      <button class="btn btn-s" onclick="clearForm()">クリア</button>
+      <button class="btn btn-p" id="sb" onclick="saveEntry()">💾 保存する</button>
+    </div>
+  </div>
+
+  <!-- 10年 -->
+  <div class="view" id="view-decade">
+    <div class="decade-date-nav">
+      <button class="decade-date-btn" onclick="decadeChangeDate(-1)">◀</button>
+      <div class="decade-date-display decade-input-wrap">
+        <div id="ddd" onclick="document.getElementById('dd').click()"></div>
+        <input type="date" id="dd" onchange="renderDecade()" style="position:absolute;opacity:0;width:100%;height:100%;top:0;left:0;cursor:pointer;">
+      </div>
+      <button class="decade-date-btn" onclick="decadeChangeDate(1)">▶</button>
+    </div>
+    <div id="decade-view"></div>
+  </div>
+
+  <!-- 検索 -->
+  <div class="view" id="view-search">
+    <div class="search-bar">
+      <input type="text" id="sq" placeholder="キーワードで検索…" onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()">検索</button>
+    </div>
+    <div class="search-count" id="rc"></div>
+    <div id="sr"></div>
+  </div>
+
+  <!-- データ -->
+  <div class="view" id="view-data">
+    <div class="data-section">
+      <div class="data-section-title">📥 GASからインポート</div>
+      <div class="data-desc">GAS版日記でエクスポートしたCSVファイルを読み込みます。既存データは保持され、新しいデータが追加・更新されます。</div>
+      <button class="btn btn-p" onclick="document.getElementById('csv-input').click()" style="margin-bottom:8px;">CSVファイルを選択</button>
+      <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="importCSV(event)">
+      <div id="import-status"></div>
+    </div>
+
+    <div class="data-section">
+      <div class="data-section-title">📤 エクスポート</div>
+      <div class="data-desc">日記データをCSVファイルとして書き出します。GASへのインポートや、バックアップにご利用ください。</div>
+      <div class="data-info" id="data-info">読み込み中…</div>
+      <div class="btn-row">
+        <button class="btn btn-s" onclick="exportCSV()">CSVで書き出し</button>
+        <button class="btn btn-s" onclick="exportJSON()">JSONで書き出し</button>
+      </div>
+    </div>
+
+    <div class="data-section">
+      <div class="data-section-title">🗑️ データ管理</div>
+      <div class="data-desc">端末内に保存されているデータを全て削除します。この操作は元に戻せません。</div>
+      <button class="btn btn-danger btn-sm" onclick="confirmClear()">全データを削除する</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ナビゲーション -->
+<nav id="nav">
+  <button class="ntab on" onclick="go('home')"><span class="icon">🏠</span>ホーム</button>
+  <button class="ntab" onclick="go('write')"><span class="icon">✏️</span>書く</button>
+  <button class="ntab" onclick="go('decade')"><span class="icon">📅</span>十年</button>
+  <button class="ntab" onclick="go('search')"><span class="icon">🔍</span>検索</button>
+  <button class="ntab" onclick="go('data')"><span class="icon">💾</span>データ</button>
+</nav>
+
+<!-- モーダル（日記詳細） -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div id="modal-box">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- 画像全画面 -->
+<div id="img-modal" onclick="document.getElementById('img-modal').classList.remove('on')">
+  <img id="img-modal-img" src="" alt="">
+</div>
+
+<!-- トースト -->
+<div id="toast"></div>
+
+<script>
+// ========== データ管理（IndexedDB） ==========
+const DB_NAME = 'DiaryDB';
+const DB_VER = 1;
+const STORE = 'entries';
+let db = null;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        d.createObjectStore(STORE, { keyPath: 'date' });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbGetAll() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbGet(date) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).get(date);
+    req.onsuccess = () => res(req.result);
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbPut(entry) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).put(entry);
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+function dbClear() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).clear();
+    req.onsuccess = () => res();
+    req.onerror = () => rej(req.error);
+  });
+}
+
+// ========== キャッシュ ==========
+let allEntries = [];
+
+async function loadAllEntries() {
+  allEntries = await dbGetAll();
+  allEntries.sort((a, b) => b.date > a.date ? 1 : -1);
+}
+
+// ========== ユーティリティ ==========
+const WDAYS = ['日','月','火','水','木','金','土'];
+
+function today() {
+  const n = new Date();
+  return n.getFullYear() + '-' + pad(n.getMonth()+1) + '-' + pad(n.getDate());
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function formatJP(dateStr) {
+  if (!dateStr) return '';
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return `${y}年${m}月${d}日（${WDAYS[dt.getDay()]}）`;
+}
+
+function toast(msg, dur=2000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), dur);
+}
+
+// ========== ナビゲーション ==========
+const VIEWS = ['home','write','decade','search','data'];
+
+function go(id) {
+  VIEWS.forEach(v => {
+    document.getElementById('view-'+v).classList.remove('on');
+  });
+  document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+  document.getElementById('view-'+id).classList.add('on');
+  const idx = VIEWS.indexOf(id);
+  if (idx >= 0) document.querySelectorAll('.ntab')[idx].classList.add('on');
+  window.scrollTo(0,0);
+  document.getElementById('main').scrollTop = 0;
+  if (id === 'home') renderHome();
+  if (id === 'decade') initDecade();
+  if (id === 'data') renderDataInfo();
+}
+
+// ========== ホーム ==========
+async function renderHome() {
+  await loadAllEntries();
+  const y = new Date().getFullYear().toString();
+  const td = today();
+  
+  // 統計
+  const yrs = new Set(allEntries.map(e => e.date.slice(0,4)));
+  let streak = 0, ck = new Date();
+  for (let i = 0; i < 3650; i++) {
+    const s = ck.getFullYear()+'-'+pad(ck.getMonth()+1)+'-'+pad(ck.getDate());
+    if (allEntries.find(e => e.date === s)) { streak++; ck.setDate(ck.getDate()-1); }
+    else break;
+  }
+  
+  document.getElementById('s1').textContent = allEntries.length;
+  document.getElementById('s2').textContent = allEntries.filter(e => e.date.startsWith(y)).length;
+  document.getElementById('s3').textContent = streak;
+  document.getElementById('s4').textContent = yrs.size;
+  
+  // 今日の状態
+  const todayEntry = allEntries.find(e => e.date === td);
+  document.getElementById('today-written').textContent = todayEntry ? '✓ 今日の日記を書きました' : '今日の日記を書きましょう';
+  
+  // ストリーク
+  const sd = document.getElementById('streak-disp');
+  if (streak >= 3) {
+    sd.innerHTML = `<div class="streak-badge">🔥 ${streak}日連続</div>`;
+  } else { sd.innerHTML = ''; }
+  
+  // 最近の記録
+  const recent = allEntries.slice(0, 15);
+  const rl = document.getElementById('recent-list');
+  if (!recent.length) {
+    rl.innerHTML = '<div class="empty-state"><div class="empty-icon">📔</div><div class="empty-text">まだ日記がありません<br>「書く」から始めましょう</div></div>';
+    return;
+  }
+  rl.innerHTML = recent.map(e => entryCard(e)).join('');
+}
+
+function entryCard(e) {
+  const pv = e.diary || e.plan || e.f1 || e.f2 || e.f3 || '';
+  const hasPhoto = e.photos && e.photos.length > 0;
+  return `<div class="entry-card" onclick="openModal('${e.date}')">
+    <div class="entry-date">${formatJP(e.date)}</div>
+    ${pv ? `<div class="entry-preview">${escHtml(pv)}</div>` : ''}
+    ${hasPhoto ? `<div class="entry-photo-badge">📷 写真 ${e.photos.length}枚</div>` : ''}
+  </div>`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ========== 書く ==========
+let currentPhotos = []; // {dataUrl, name}
+let currentVideos = [];
+
+async function loadEntry() {
+  const dt = document.getElementById('wd').value;
+  document.getElementById('wdd').textContent = dt ? formatJP(dt) : '日付を選択';
+  if (!dt) return;
+  const e = await dbGet(dt);
+  document.getElementById('wp').value = e ? (e.plan||'') : '';
+  document.getElementById('f1n').value = e ? (e.f1n||'ひとこと') : 'ひとこと';
+  document.getElementById('f1').value = e ? (e.f1||'') : '';
+  document.getElementById('f2n').value = e ? (e.f2n||'気づき・学び') : '気づき・学び';
+  document.getElementById('f2').value = e ? (e.f2||'') : '';
+  document.getElementById('f3n').value = e ? (e.f3n||'感謝したこと') : '感謝したこと';
+  document.getElementById('f3').value = e ? (e.f3||'') : '';
+  document.getElementById('diary-area').value = e ? (e.diary||'') : '';
+  currentVideos = e && e.video ? e.video.filter(Boolean) : [];
+  currentPhotos = e && e.photos ? e.photos : [];
+  renderVideoTags();
+  renderPhotoGrid();
+}
+
+function setToday() {
+  document.getElementById('wd').value = today();
+  loadEntry();
+}
+
+function changeDate(d) {
+  const cur = document.getElementById('wd').value || today();
+  const dt = new Date(cur + 'T00:00:00');
+  dt.setDate(dt.getDate() + d);
+  document.getElementById('wd').value = dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+  loadEntry();
+}
+
+function addPhotos(ev) {
+  const files = Array.from(ev.target.files);
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      currentPhotos.push({ dataUrl: e.target.result, name: f.name });
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(f);
+  });
+  ev.target.value = '';
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photo-grid');
+  grid.innerHTML = currentPhotos.map((p,i) => 
+    `<div class="photo-thumb">
+      <img src="${p.dataUrl}" onclick="viewImg('${p.dataUrl}')">
+      <button class="photo-del" onclick="removePhoto(${i})">✕</button>
+    </div>`
+  ).join('') + 
+  `<div class="photo-add-btn" onclick="document.getElementById('photo-input').click()">
+    <span class="icon">＋</span><span>追加</span>
+  </div>`;
+}
+
+function removePhoto(i) {
+  currentPhotos.splice(i, 1);
+  renderPhotoGrid();
+}
+
+function viewImg(src) {
+  document.getElementById('img-modal-img').src = src;
+  document.getElementById('img-modal').classList.add('on');
+}
+
+function addVideo() {
+  const v = document.getElementById('vi').value.trim();
+  if (!v) return;
+  currentVideos.push(v);
+  document.getElementById('vi').value = '';
+  renderVideoTags();
+}
+
+function removeVideo(i) {
+  currentVideos.splice(i, 1);
+  renderVideoTags();
+}
+
+function renderVideoTags() {
+  document.getElementById('vtags').innerHTML = currentVideos.map((u,i) =>
+    `<div class="form-label" style="margin-bottom:4px;">🎬 <a href="${u}" target="_blank" style="color:var(--gold2);font-size:0.78rem;flex:1;overflow:hidden;text-overflow:ellipsis;">${u}</a>
+    <button onclick="removeVideo(${i})" style="border:none;background:none;cursor:pointer;color:var(--ink3);">✕</button></div>`
+  ).join('');
+}
+
+async function saveEntry() {
+  const dt = document.getElementById('wd').value;
+  if (!dt) { toast('日付を選んでください'); return; }
+  const btn = document.getElementById('sb');
+  btn.textContent = '保存中…'; btn.disabled = true;
+  const entry = {
+    date: dt,
+    plan: document.getElementById('wp').value,
+    f1n: document.getElementById('f1n').value,
+    f1: document.getElementById('f1').value,
+    f2n: document.getElementById('f2n').value,
+    f2: document.getElementById('f2').value,
+    f3n: document.getElementById('f3n').value,
+    f3: document.getElementById('f3').value,
+    diary: document.getElementById('diary-area').value,
+    video: currentVideos,
+    photos: currentPhotos,
+    updatedAt: new Date().toISOString()
+  };
+  await dbPut(entry);
+  btn.textContent = '💾 保存する'; btn.disabled = false;
+  toast('✓ 保存しました');
+  setTimeout(() => go('home'), 300);
+}
+
+function clearForm() {
+  ['wp','f1','f2','f3','diary-area'].forEach(id => document.getElementById(id).value = '');
+  currentVideos = []; currentPhotos = [];
+  renderVideoTags(); renderPhotoGrid();
+}
+
+// ========== 10年 ==========
+function initDecade() {
+  const dd = document.getElementById('dd');
+  dd.value = today();
+  document.getElementById('ddd').textContent = formatJP(today()).slice(0,-5) + '日';
+  renderDecade();
+}
+
+function decadeChangeDate(d) {
+  const cur = document.getElementById('dd').value || today();
+  const dt = new Date(cur + 'T00:00:00');
+  dt.setDate(dt.getDate() + d);
+  const v = dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+  document.getElementById('dd').value = v;
+  const [,m,dy] = v.split('-');
+  document.getElementById('ddd').textContent = `${parseInt(m)}月${parseInt(dy)}日`;
+  renderDecade();
+}
+
+async function renderDecade() {
+  const ds = document.getElementById('dd').value;
+  if (!ds) return;
+  const [,m,dy] = ds.split('-').map(Number);
+  const cy = new Date().getFullYear();
+  await loadAllEntries();
+  const mmdd = pad(m)+'-'+pad(dy);
+  const same = allEntries.filter(e => e.date.slice(5) === mmdd);
+  const byYear = {};
+  same.forEach(e => { byYear[parseInt(e.date)] = e; });
+  const mn = same.length ? Math.min(...same.map(e => parseInt(e.date))) : cy;
+  const rs = Math.min(mn, cy - 9);
+  
+  document.getElementById('ddd').textContent = `${m}月${dy}日`;
+  
+  let html = `<div class="decade-header">${m}月${dy}日 の記録</div>`;
+  for (let y = cy; y >= rs; y--) {
+    const e = byYear[y];
+    if (!e) {
+      html += `<div class="decade-item empty"><div class="decade-year">${y}年</div><div class="decade-empty">記録なし</div></div>`;
+    } else {
+      const pv = e.diary || e.plan || e.f1 || e.f2 || e.f3 || '';
+      html += `<div class="decade-item" onclick="openModal('${e.date}')">
+        <div class="decade-year">${y}年</div>
+        <div class="decade-text">${escHtml(pv.slice(0,80))}${pv.length>80?'…':''}</div>
+      </div>`;
+    }
+  }
+  document.getElementById('decade-view').innerHTML = html;
+}
+
+// ========== 検索 ==========
+function doSearch() {
+  const q = document.getElementById('sq').value.trim();
+  if (!q) { toast('キーワードを入力してください'); return; }
+  const ql = q.toLowerCase();
+  const results = allEntries.filter(e => 
+    [e.plan,e.f1,e.f2,e.f3,e.diary,...(e.video||[])].join(' ').toLowerCase().includes(ql)
+  );
+  document.getElementById('rc').textContent = `「${q}」の結果：${results.length}件`;
+  document.getElementById('sr').innerHTML = results.length 
+    ? results.map(e => entryCard(e)).join('')
+    : '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">見つかりませんでした</div></div>';
+}
+
+// ========== モーダル ==========
+async function openModal(date) {
+  const e = await dbGet(date);
+  if (!e) return;
+  let html = `<div class="modal-date">${formatJP(date)}</div>`;
+  const fields = [
+    {n:'今日の予定',v:e.plan},
+    {n:e.f1n||'ひとこと',v:e.f1},
+    {n:e.f2n||'気づき・学び',v:e.f2},
+    {n:e.f3n||'感謝したこと',v:e.f3},
+    {n:'日記',v:e.diary}
+  ].filter(f => f.v);
+  html += fields.map(f => 
+    `<div class="modal-section"><div class="modal-label">${f.n}</div><div class="modal-text">${escHtml(f.v)}</div></div>`
+  ).join('');
+  if (e.photos && e.photos.length) {
+    html += `<div class="modal-section"><div class="modal-label">写真</div>
+      <div class="modal-imgs">${e.photos.map(p => 
+        `<img class="modal-img" src="${p.dataUrl}" onclick="viewImg('${p.dataUrl}')">`
+      ).join('')}</div></div>`;
+  }
+  if (e.video && e.video.length) {
+    html += `<div class="modal-section"><div class="modal-label">動画リンク</div>
+      ${e.video.map(u => `<div style="margin-top:4px;">🎬 <a href="${u}" target="_blank" style="color:var(--gold2);font-size:0.8rem;">${u}</a></div>`).join('')}
+    </div>`;
+  }
+  html += `<div class="modal-btn-row">
+    <button class="btn btn-s btn-sm" style="flex:1;" onclick="editEntry('${date}')">✏️ 編集</button>
+    <button class="btn btn-p btn-sm" style="flex:1;" onclick="closeModal()">閉じる</button>
+  </div>`;
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('on');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('on');
+}
+
+function editEntry(date) {
+  closeModal();
+  document.getElementById('wd').value = date;
+  loadEntry();
+  go('write');
+}
+
+// ========== データ管理 ==========
+async function renderDataInfo() {
+  await loadAllEntries();
+  const info = document.getElementById('data-info');
+  if (!allEntries.length) { info.textContent = 'データなし'; return; }
+  const dates = allEntries.map(e => e.date).sort();
+  const withPhoto = allEntries.filter(e => e.photos && e.photos.length > 0).length;
+  info.textContent = `記録数：${allEntries.length}件 ／ 期間：${formatJP(dates[0]).slice(0,10)} 〜 ${formatJP(dates[dates.length-1]).slice(0,10)} ／ 写真付き：${withPhoto}件`;
+}
+
+async function importCSV(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const status = document.getElementById('import-status');
+  status.textContent = '読み込み中…';
+  const text = await file.text();
+  const lines = text.split('\n');
+  if (lines.length < 2) { status.textContent = 'データが見つかりません'; return; }
+  
+  // ヘッダー解析
+  const header = parseCSVLine(lines[0]);
+  // 期待: 日付,今日の予定,項目1名,項目1,項目2名,項目2,項目3名,項目3,日記,動画リンク,写真リンク,写真ID
+  
+  let count = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const cols = parseCSVLine(line);
+    const rawDate = cols[0] ? cols[0].trim() : '';
+    if (!rawDate) continue;
+    // yyyy-MM-dd 形式でなければ変換（例: "Thu Mar 05 2026 00:00:00 GMT+0900 ..."）
+    let date = rawDate;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const parsed = new Date(date);
+      if (isNaN(parsed.getTime())) continue;
+      date = parsed.getFullYear() + '-' +
+             String(parsed.getMonth() + 1).padStart(2, '0') + '-' +
+             String(parsed.getDate()).padStart(2, '0');
+    }
+    
+    const existing = await dbGet(date);
+    const entry = {
+      date,
+      plan: cols[1] || '',
+      f1n: cols[2] || 'ひとこと',
+      f1: cols[3] || '',
+      f2n: cols[4] || '気づき・学び',
+      f2: cols[5] || '',
+      f3n: cols[6] || '感謝したこと',
+      f3: cols[7] || '',
+      diary: cols[8] || '',
+      video: cols[9] ? cols[9].split('|').filter(Boolean) : [],
+      photos: existing ? (existing.photos || []) : [], // 既存写真を保持
+      updatedAt: new Date().toISOString()
+    };
+    await dbPut(entry);
+    count++;
+  }
+  status.textContent = `✓ ${count}件をインポートしました`;
+  toast(`✓ ${count}件インポート完了`);
+  ev.target.value = '';
+  await loadAllEntries();
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '';
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else {
+      cur += c;
+    }
+  }
+  result.push(cur);
+  return result;
+}
+
+async function exportCSV() {
+  await loadAllEntries();
+  if (!allEntries.length) { toast('データがありません'); return; }
+  const header = ['日付','今日の予定','項目1名','項目1','項目2名','項目2','項目3名','項目3','日記','動画リンク','写真リンク','写真ID'];
+  const rows = [header, ...allEntries.map(e => [
+    e.date, e.plan||'', e.f1n||'ひとこと', e.f1||'',
+    e.f2n||'気づき・学び', e.f2||'', e.f3n||'感謝したこと', e.f3||'',
+    e.diary||'', (e.video||[]).join('|'), '', ''
+  ])];
+  const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const bom = '\uFEFF';
+  const blob = new Blob([bom+csv], {type:'text/csv;charset=utf-8'});
+  downloadBlob(blob, `diary_${today()}.csv`);
+  toast('✓ CSVを書き出しました');
+}
+
+async function exportJSON() {
+  await loadAllEntries();
+  if (!allEntries.length) { toast('データがありません'); return; }
+  // 写真データは除外（サイズ大）してエクスポート
+  const data = allEntries.map(e => ({...e, photos: e.photos ? e.photos.map(p=>({name:p.name})) : []}));
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  downloadBlob(blob, `diary_${today()}.json`);
+  toast('✓ JSONを書き出しました');
+}
+
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+async function confirmClear() {
+  if (confirm('全データを削除します。この操作は元に戻せません。\n\n本当に削除しますか？')) {
+    await dbClear();
+    allEntries = [];
+    toast('✓ 全データを削除しました');
+    renderDataInfo();
+  }
+}
+
+// ========== 初期化 ==========
+window.onload = async function() {
+  await openDB();
+  const n = new Date();
+  document.getElementById('hd').textContent = `${n.getFullYear()}.${n.getMonth()+1}.${n.getDate()} ${WDAYS[n.getDay()]}曜日`;
+  document.getElementById('today-jp').textContent = formatJP(today());
+  document.getElementById('wd').value = today();
+  document.getElementById('wdd').textContent = formatJP(today());
+  await loadAllEntries();
+  renderHome();
+};
+</script>
+</body>
+</html>
