@@ -692,21 +692,38 @@ function editEntry(date){closeMo();goWrite(date);}
 function viewImg(src){document.getElementById('img-mo-img').src=src;document.getElementById('img-mo').classList.add('on');}
 
 /* ============================================================
-   CSVパーサー
+   CSVパーサー（複数行フィールド対応）
+   ダブルクォート内の改行も正しく処理する
 ============================================================ */
-function parseCSV(line){
-  const r=[];let cur='',inQ=false;
-  for(let i=0;i<line.length;i++){
-    const c=line[i];
-    if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
-    else if(c===','&&!inQ){r.push(cur);cur='';}
-    else cur+=c;
+function parseCSVFull(text){
+  // BOM除去
+  text = text.replace(/^\uFEFF/,'');
+  const rows=[];
+  let col='', cols=[], inQ=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    const next=text[i+1];
+    if(c==='"'){
+      if(inQ&&next==='"'){col+='"';i++;} // エスケープされた"
+      else inQ=!inQ;
+    } else if(c===','&&!inQ){
+      cols.push(col);col='';
+    } else if((c==='\r'||c==='\n')&&!inQ){
+      // クォート外の改行→行末
+      if(c==='\r'&&next==='\n')i++; // \r\nを1つとして処理
+      cols.push(col);col='';
+      rows.push(cols);cols=[];
+    } else {
+      col+=c;
+    }
   }
-  r.push(cur);return r;
+  // 最後の行
+  if(col||cols.length){cols.push(col);rows.push(cols);}
+  return rows;
 }
 
 /* ============================================================
-   インポート（重複チェック付き）
+   インポート（重複チェック付き・複数行本文対応）
 ============================================================ */
 async function importCSV(ev){
   const file=ev.target.files[0];if(!file)return;
@@ -715,17 +732,16 @@ async function importCSV(ev){
   prog.textContent='読み込み中…';
   try{
     const text=await file.text();
-    const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
-    if(lines.length<2){prog.textContent='データが見つかりません';return;}
-    lines[0]=lines[0].replace(/^\uFEFF/,'');
+    const rows=parseCSVFull(text);
+    if(rows.length<2){prog.textContent='データが見つかりません';return;}
+    // 1行目はヘッダーなのでスキップ（i=1から）
     let created=0,updated=0,skip=0;
-    for(let i=1;i<lines.length;i++){
-      const line=lines[i].trim();if(!line)continue;
-      const cols=parseCSV(line);
-      const date=normDate(cols[0]);
+    for(let i=1;i<rows.length;i++){
+      const cols=rows[i];
+      if(!cols||!cols[0]||!cols[0].trim()){skip++;continue;}
+      const date=normDate(cols[0].trim());
       if(!date){skip++;continue;}
       const existing=await dbGet(date);
-      // テキスト項目はCSVの値を優先、写真は既存を保持
       const entry={
         date,
         plan:cols[1]||'',f1n:cols[2]||'ひとこと',f1:cols[3]||'',
@@ -733,7 +749,7 @@ async function importCSV(ev){
         f3n:cols[6]||'感謝したこと',f3:cols[7]||'',
         diary:cols[8]||'',
         video:cols[9]?cols[9].split('|').filter(Boolean):[],
-        photos:existing?existing.photos||[]:[],  // 写真は既存を引き継ぐ
+        photos:existing?existing.photos||[]:[],
         updatedAt:new Date().toISOString()
       };
       await dbPut(entry);
