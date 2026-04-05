@@ -266,7 +266,7 @@
         </div>
         <div class="br">
           <button class="btn btn-s btn-sm" onclick="cf()">クリア</button>
-          <button class="btn btn-p btn-sm" id="sb" onclick="se()">💾 保存する</button>
+          <button class="btn btn-p btn-sm" id="sb" onclick="se()" ondblclick="document.getElementById('sb').disabled=false">💾 保存する</button>
         </div>
       </div>
     </div>
@@ -432,14 +432,27 @@ function apiPost(action, params) {
   var body = new URLSearchParams();
   body.set('action', action);
   Object.keys(params).forEach(function(k) { body.set(k, String(params[k])); });
-  return fetch(GAS_URL, { method: 'POST', body: body, redirect: 'follow' })
+
+  /* 30秒タイムアウト（iOS SafariでfetchがGASリダイレクトで止まる対策） */
+  var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = controller ? setTimeout(function() { controller.abort(); }, 30000) : null;
+  var opts = { method: 'POST', body: body, redirect: 'follow' };
+  if (controller) opts.signal = controller.signal;
+
+  return fetch(GAS_URL, opts)
     .then(function(r) {
+      if (timer) clearTimeout(timer);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
     })
     .then(function(d) {
       if (d && d.error) throw new Error(d.error);
       return d;
+    })
+    .catch(function(err) {
+      if (timer) clearTimeout(timer);
+      if (err && err.name === 'AbortError') throw new Error('通信タイムアウト（30秒）');
+      throw err;
     });
 }
 
@@ -700,6 +713,13 @@ function rvt() {
 function se() {
   var dt = document.getElementById('wd').value;
   if (!dt) { toast('日付を選んでください'); return; }
+
+  /* 「追加」ボタンを押さずに入力欄にURLが残っていたら自動追加 */
+  var vi = document.getElementById('vi');
+  if (vi && vi.value.trim()) { vl.push(vi.value.trim()); vi.value = ''; rvt(); }
+  var pi = document.getElementById('pi');
+  if (pi && pi.value.trim()) { pl.push(pi.value.trim()); pi.value = ''; rpt(); }
+
   var btn = document.getElementById('sb');
   btn.textContent = '保存中…'; btn.disabled = true;
 
