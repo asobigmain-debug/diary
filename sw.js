@@ -1,5 +1,5 @@
 /* sw.js — 10年日記 Service Worker */
-const CACHE_NAME = 'diary10-v1';
+const CACHE_NAME = 'diary10-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
