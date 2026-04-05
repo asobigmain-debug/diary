@@ -82,9 +82,8 @@
     .btn-s:hover,.btn-s:active{border-color:var(--red);color:var(--red);}
     .btn-sm{padding:7px 13px;font-size:0.74rem;}
     .br{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px;}
-    .save-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(245,240,232,0.97);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:8px;justify-content:flex-end;z-index:150;visibility:hidden;pointer-events:none;}
-    .save-bar.show{visibility:visible;pointer-events:auto;}
-    #view-write{padding-bottom:74px;}
+    .br{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px;padding:14px 0 24px;}
+    .br .btn{min-width:120px;padding:13px 20px;font-size:0.9rem;}
 
     /* ── ホーム ── */
     .banner{background:linear-gradient(135deg,var(--ink) 0%,var(--ink2) 100%);color:var(--washi);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
@@ -267,14 +266,13 @@
           <div id="vtags"></div>
           <div class="mrow"><input class="mi" id="vi" type="url"><button class="btn btn-s btn-sm" onclick="av()">追加</button></div>
         </div>
+        <div class="br">
+          <button class="btn btn-s" onclick="cf()">クリア</button>
+          <button class="btn btn-p" id="sb" onclick="se()">💾 保存する</button>
+        </div>
         <div style="height:4px;"></div>
       </div>
     </div>
-  </div>
-  <!-- 書くビュー固定保存バー -->
-  <div class="save-bar" id="write-save-bar">
-    <button class="btn btn-s btn-sm" onclick="cf()">クリア</button>
-    <button class="btn btn-p btn-sm" id="sb" onclick="se()">💾 保存する</button>
   </div>
 
   <!-- 10年帖 -->
@@ -502,12 +500,6 @@ function go(id) {
   var m = {home:0, write:1, decade:2, search:3, data:4};
   if (m[id] !== undefined) document.querySelectorAll('.ntab')[m[id]].classList.add('on');
   window.scrollTo(0, 0);
-  /* 書くビューのみ固定保存バーを表示 */
-  var bar = document.getElementById('write-save-bar');
-  if (bar) {
-    if (id === 'write') bar.classList.add('show');
-    else bar.classList.remove('show');
-  }
   if (id === 'home')   rh();
   if (id === 'decade') sdt();
 }
