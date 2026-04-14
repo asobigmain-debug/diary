@@ -280,6 +280,22 @@ html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(-
 <!-- データ管理 -->
 <div class="view" id="view-data">
   <div class="ds">
+    <div class="ds-ttl">🔗 GAS API URL設定</div>
+    <div class="ds-desc">GASのデプロイURLを入力すると、スプレッドシートと同期できます。</div>
+    <input type="text" id="gas-url-input" style="width:100%;border:1.5px solid var(--cream2);border-radius:6px;padding:8px 10px;font-size:.76rem;background:white;outline:none;margin-bottom:8px;" placeholder="https://script.google.com/macros/s/...">
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-p btn-sm" onclick="saveGasUrl()">💾 URLを保存</button>
+      <button class="btn btn-s btn-sm" onclick="testGasUrl()">🔍 接続テスト</button>
+    </div>
+    <div class="prog" id="gas-url-prog"></div>
+  </div>
+  <div class="ds">
+    <div class="ds-ttl">☁️ GASと同期</div>
+    <div class="ds-desc">GASのスプレッドシートからデータを取得してIndexedDBに保存します。</div>
+    <button class="btn btn-p btn-sm" onclick="syncFromGas()">📥 GASからデータを取得</button>
+    <div class="prog" id="sync-prog"></div>
+  </div>
+  <div class="ds">
     <div class="ds-ttl">📥 CSVインポート</div>
     <div class="ds-desc">GAS版で書き出したCSVを読み込みます。同じ日付のデータは上書き更新されます。</div>
     <div class="upload-zone" onclick="document.getElementById('csv-in').click()">
@@ -878,6 +894,74 @@ async function renderDataInfo(){
   const withP=allEntries.filter(e=>e.photos&&e.photos.length>0).length;
   el.textContent=`記録数：${allEntries.length}件 ／ 期間：${dates[0]} 〜 ${dates[dates.length-1]} ／ 写真付き：${withP}件`;
 }
+/* ============================================================
+   GAS API連携
+============================================================ */
+function getGasUrl(){
+  return localStorage.getItem('diary_gas_url')||'';
+}
+function saveGasUrl(){
+  const url=document.getElementById('gas-url-input').value.trim();
+  const prog=document.getElementById('gas-url-prog');
+  if(!url){prog.textContent='URLを入力してください';return;}
+  localStorage.setItem('diary_gas_url',url);
+  prog.textContent='✓ 保存しました';
+  toast('✓ GAS URLを保存しました');
+}
+async function testGasUrl(){
+  const url=getGasUrl();
+  const prog=document.getElementById('gas-url-prog');
+  if(!url){prog.textContent='先にURLを保存してください';return;}
+  prog.textContent='接続確認中…';
+  try{
+    const res=await gasApi({action:'getAllEntries'});
+    if(Array.isArray(res)){
+      prog.textContent=`✓ 接続OK（${res.length}件のデータ確認）`;
+    } else {
+      prog.textContent='エラー: '+JSON.stringify(res);
+    }
+  }catch(e){
+    prog.textContent='接続失敗: '+e.message;
+  }
+}
+async function gasApi(params){
+  const url=getGasUrl();
+  if(!url)throw new Error('GAS URLが設定されていません');
+  const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const res=await fetch(url+'?'+qs);
+  return await res.json();
+}
+async function syncFromGas(){
+  const prog=document.getElementById('sync-prog');
+  prog.textContent='取得中…';
+  try{
+    const entries=await gasApi({action:'getAllEntries'});
+    if(!Array.isArray(entries)){prog.textContent='エラー: '+JSON.stringify(entries);return;}
+    let count=0;
+    for(const e of entries){
+      const date=e.date;
+      if(!date)continue;
+      const existing=await dbGet(date);
+      const entry={
+        date,plan:e.plan||'',f1n:e.f1n||'ひとこと',f1:e.f1||'',
+        f2n:e.f2n||'気づき・学び',f2:e.f2||'',
+        f3n:e.f3n||'感謝したこと',f3:e.f3||'',
+        diary:e.diary||'',
+        video:e.video?String(e.video).split('|').filter(Boolean):[],
+        photos:existing?existing.photos||[]:[],
+        updatedAt:new Date().toISOString()
+      };
+      await dbPut(entry);count++;
+    }
+    prog.textContent=`✓ ${count}件を取得・保存しました`;
+    toast(`✓ GASから${count}件を同期しました`);
+    allEntries=await dbGetAll();
+    renderHome();
+  }catch(e){
+    prog.textContent='エラー: '+e.message;
+  }
+}
+
 async function clearAll(){
   if(!confirm('全データを削除しますか？\nこの操作は取り消せません。'))return;
   if(!confirm('本当によろしいですか？\n先にエクスポートしましたか？'))return;
@@ -890,6 +974,9 @@ async function clearAll(){
    起動
 ============================================================ */
 window.addEventListener('DOMContentLoaded',()=>{
+  // GAS URL復元
+  const savedUrl=localStorage.getItem('diary_gas_url');
+  if(savedUrl)document.getElementById('gas-url-input').value=savedUrl;
   init().then(()=>{
     const dt=today();
     writeDate=dt;
