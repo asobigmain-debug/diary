@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diary-v4';
+const CACHE_NAME = 'diary-v2';
 const ASSETS = ['./', './index.html'];
 
 self.addEventListener('install', e => {
@@ -19,14 +19,12 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (!e.request.url.startsWith(self.location.origin)) return;
-  // ナビゲーションは常にネットワーク優先
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request).catch(() => caches.match('./index.html'))
     );
     return;
   }
-  // その他はキャッシュ優先
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;

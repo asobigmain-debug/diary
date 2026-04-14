@@ -1,993 +1,961 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>10年日記</title>
-<link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Zen+Kaku+Gothic+New:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --paper:#faf5f0;--paper2:#f5ede8;--cream:#f0e0d8;--cream2:#e8d0c8;
-  --moss:#8b2218;--moss2:#a02820;--moss3:#b53828;
-  --gold:#7a4a10;--gold2:#c04010;
-  --ink:#2c2416;--ink2:#4a3c28;--ink3:#6b5a3e;
-  --red:#5a0e0e;
-  --r:10px;--serif:'Shippori Mincho',serif;--sans:'Zen Kaku Gothic New',sans-serif;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+  <title>10年日記</title>
+  <!-- PWA / iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="10年日記">
+  <meta name="theme-color" content="#1a1208">
+  <link rel="manifest" href="manifest.json">
+  <!-- フォント -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#1a1208; --ink2:#3d2e1a; --washi:#f5f0e8;
+      --red:#c0392b; --red2:#e74c3c;
+      --gold:#9a7b2e; --gold2:#c4973a;
+      --border:#c8b89a; --sh:rgba(26,18,8,0.12);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;overflow-x:hidden;}
+    body{font-family:"Noto Serif JP",serif;background:var(--washi);color:var(--ink);min-height:100vh;}
 
-.hd{background:var(--moss);color:var(--paper);padding:11px 16px 9px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2);}
-.hd-title{font-family:var(--serif);font-size:1.1rem;letter-spacing:.35em;}
-.hd-date{font-size:.62rem;color:rgba(245,240,232,.55);text-align:right;line-height:1.7;}
+    /* ── セットアップ画面 ── */
+    #setup{position:fixed;inset:0;background:var(--ink);z-index:999;display:none;align-items:center;justify-content:center;padding:20px;}
+    .su-box{background:var(--washi);border-radius:12px;padding:28px 24px;max-width:460px;width:100%;}
+    .su-title{font-family:"Shippori Mincho",serif;font-size:1.5rem;letter-spacing:0.35em;text-align:center;margin-bottom:4px;}
+    .su-sub{font-size:0.72rem;color:var(--gold);text-align:center;letter-spacing:0.15em;margin-bottom:22px;}
+    .su-lbl{font-size:0.68rem;letter-spacing:0.2em;color:var(--gold);font-weight:600;margin-bottom:6px;display:block;}
+    .su-inp{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:11px 13px;font-size:0.8rem;background:rgba(245,240,232,0.9);font-family:monospace;color:var(--ink);}
+    .su-inp:focus{outline:none;border-color:var(--red);}
+    .su-hint{font-size:0.69rem;color:var(--ink2);line-height:1.85;margin:10px 0 20px;}
+    .su-hint b{color:var(--red);}
 
-.nav{display:flex;background:var(--paper2);border-bottom:2px solid var(--cream2);overflow-x:auto;position:sticky;top:46px;z-index:99;-webkit-overflow-scrolling:touch;}
-.nav::-webkit-scrollbar{display:none;}
-.ntab{flex:0 0 auto;padding:11px 18px 9px;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--sans);font-size:.76rem;color:var(--ink3);cursor:pointer;white-space:nowrap;}
-.ntab.on{color:var(--moss);border-bottom-color:var(--moss);font-weight:700;}
+    /* ── オフラインバナー ── */
+    #offline-banner{background:#7f1d1d;color:#fecaca;text-align:center;font-size:0.73rem;padding:6px 14px;display:none;}
+    #offline-banner.show{display:block;}
 
-.view{display:none;padding:14px 14px 90px;}
-.view.on{display:block;}
+    /* ── ヘッダー ── */
+    .hd{background:var(--ink);color:var(--washi);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;}
+    .hd-bar{width:4px;height:28px;background:var(--red);border-radius:2px;flex-shrink:0;}
+    .hd-title{font-family:"Shippori Mincho",serif;font-size:1.2rem;letter-spacing:0.35em;font-weight:600;flex:1;}
+    .hd-date{font-size:0.63rem;color:rgba(245,240,232,0.5);text-align:right;line-height:1.7;}
 
-.card{background:white;border-radius:var(--r);padding:14px;margin-bottom:11px;border:1px solid var(--cream);box-shadow:0 1px 4px rgba(44,36,22,.07);}
+    /* ── ナビ ── */
+    .nav{display:flex;background:#2a1e0e;overflow-x:auto;scrollbar-width:none;}
+    .nav::-webkit-scrollbar{display:none;}
+    .ntab{padding:10px 16px;color:rgba(245,240,232,0.5);font-size:0.76rem;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:"Noto Serif JP",serif;transition:all 0.2s;}
+    .ntab.on{color:var(--washi);border-bottom-color:var(--red);}
 
-.banner{background:linear-gradient(135deg,#8b2218,#c04030);color:var(--paper);border-radius:var(--r);padding:16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
-.bdate{font-family:var(--serif);}
-.bdate small{display:block;font-size:.6rem;color:rgba(245,240,232,.6);letter-spacing:.2em;}
-.bdate strong{font-size:1.05rem;}
+    /* ── ビュー共通 ── */
+    .main{padding:16px 14px;max-width:760px;margin:0 auto;}
+    .view{display:none;}
+    .view.on{display:block;}
+    .card{background:rgba(255,255,255,0.75);border:1px solid var(--border);border-radius:8px;padding:18px;margin-bottom:14px;}
+    .sec{font-family:"Shippori Mincho",serif;font-size:0.95rem;letter-spacing:0.2em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+    .sec::before{content:"";display:block;width:4px;height:15px;background:var(--red);border-radius:2px;flex-shrink:0;}
+    .lbl{font-size:0.68rem;letter-spacing:0.2em;color:var(--gold);font-weight:600;margin-bottom:4px;display:block;}
+    .inp,.ta{border:1.5px solid var(--border);border-radius:5px;padding:8px 11px;font-family:"Noto Serif JP",serif;font-size:0.88rem;color:var(--ink);background:rgba(245,240,232,0.9);width:100%;-webkit-appearance:none;transition:border-color 0.2s;}
+    .inp:focus,.ta:focus{outline:none;border-color:var(--red);}
+    .ta{resize:vertical;line-height:1.9;min-height:90px;}
+    .ta-lg{min-height:150px;}
+    .fn-inp{border:none;border-bottom:1.5px dashed var(--border);background:transparent;font-family:"Noto Serif JP",serif;font-size:0.7rem;letter-spacing:0.18em;color:var(--gold);padding:2px 4px;width:190px;outline:none;}
+    .fn-inp:focus{border-bottom-color:var(--red);}
+    .fg{display:grid;gap:14px;}
 
-.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px;}
-.sb{background:white;border:1px solid var(--cream);border-radius:8px;padding:9px 4px;text-align:center;}
-.sn{font-family:var(--serif);font-size:1.2rem;color:var(--moss);}
-.sl{font-size:.58rem;color:var(--ink3);margin-top:2px;}
+    /* ── 日付ナビ ── */
+    .dnav{display:flex;align-items:center;gap:8px;background:var(--ink);border-radius:8px;padding:12px 14px;margin-bottom:14px;}
+    .db{background:rgba(245,240,232,0.12);border:1px solid rgba(245,240,232,0.2);color:var(--washi);border-radius:4px;padding:6px 11px;font-family:"Noto Serif JP",serif;font-size:0.75rem;cursor:pointer;white-space:nowrap;}
+    .ddisp{font-family:"Shippori Mincho",serif;color:var(--washi);flex:1;text-align:center;}
+    .ddisp input{background:transparent;border:none;color:var(--washi);font-family:"Shippori Mincho",serif;font-size:0.85rem;text-align:center;cursor:pointer;width:100%;}
+    .ddisp input:focus{outline:none;}
 
-.sec{font-family:var(--serif);font-size:.86rem;color:var(--moss);margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid var(--cream2);}
+    /* ── ボタン ── */
+    .btn{padding:10px 20px;border-radius:5px;font-family:"Noto Serif JP",serif;font-size:0.84rem;cursor:pointer;transition:all 0.18s;border:none;font-weight:500;}
+    .btn-p{background:var(--red);color:white;}
+    .btn-p:hover,.btn-p:active{background:var(--red2);}
+    .btn-p:disabled{opacity:0.6;cursor:not-allowed;}
+    .btn-s{background:transparent;color:var(--ink);border:1.5px solid var(--border);}
+    .btn-s:hover,.btn-s:active{border-color:var(--red);color:var(--red);}
+    .btn-sm{padding:7px 13px;font-size:0.74rem;}
+    .br{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px;}
+    .br{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;padding:16px 0;padding-bottom:calc(16px + env(safe-area-inset-bottom, 20px));border-top:2px solid var(--border);}
+    .br .btn{min-width:130px;padding:15px 24px;font-size:1rem;border-radius:8px;}
+    body{padding-bottom:env(safe-area-inset-bottom,0);}
 
-.ec{background:white;border:1px solid var(--cream);border-radius:8px;padding:10px 13px;margin-bottom:7px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;}
-.ec:active{background:var(--cream);}
-.ec-left{flex:1;min-width:0;}
-.ed{font-family:var(--serif);font-size:.82rem;color:var(--gold2);margin-bottom:3px;}
-.ep{font-size:.76rem;color:var(--ink2);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-.ep-badge{font-size:.62rem;color:var(--moss2);margin-top:3px;}
-.ec-thumb{width:52px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;}
+    /* ── ホーム ── */
+    .banner{background:linear-gradient(135deg,var(--ink) 0%,var(--ink2) 100%);color:var(--washi);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+    .bdate{font-family:"Shippori Mincho",serif;font-size:1.2rem;letter-spacing:0.2em;}
+    .bdate span{display:block;font-size:0.64rem;color:var(--gold2);letter-spacing:0.25em;margin-bottom:2px;}
+    .sg{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:16px;}
+    @media(min-width:400px){.sg{grid-template-columns:repeat(4,1fr);}}
+    .sb{background:var(--ink);color:var(--washi);border-radius:7px;padding:13px 8px;text-align:center;}
+    .sn{font-family:"Shippori Mincho",serif;font-size:1.7rem;color:var(--gold2);line-height:1;}
+    .sl{font-size:0.64rem;letter-spacing:0.16em;color:rgba(245,240,232,0.6);margin-top:3px;}
+    .ec{background:rgba(255,255,255,0.72);border:1px solid var(--border);border-radius:7px;padding:13px 15px;margin-bottom:8px;cursor:pointer;transition:all 0.14s;border-left:4px solid var(--red);}
+    .ec:active{box-shadow:0 4px 14px var(--sh);}
+    .ed{font-family:"Shippori Mincho",serif;font-size:0.9rem;color:var(--red);font-weight:600;margin-bottom:3px;}
+    .ep{font-size:0.82rem;color:var(--ink2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
-/* 日付ナビ */
-.dnav{display:flex;align-items:center;gap:7px;margin-bottom:12px;background:var(--paper2);border-radius:8px;padding:7px 8px;}
-.ddisp{flex:1;text-align:center;font-family:var(--serif);font-size:.9rem;color:var(--moss2);cursor:pointer;padding:6px;border-radius:6px;user-select:none;-webkit-user-select:none;}
-.ddisp:active{background:var(--cream);}
-.db{background:white;border:1px solid var(--cream2);border-radius:6px;padding:7px 12px;font-size:.82rem;cursor:pointer;color:var(--ink2);white-space:nowrap;flex-shrink:0;}
-.db:active{background:var(--cream);}
+    /* ── 10年帖 ── */
+    .dh{background:var(--ink);color:var(--washi);border-radius:7px 7px 0 0;padding:12px 15px;font-family:"Shippori Mincho",serif;font-size:0.9rem;letter-spacing:0.22em;}
+    .dh span{color:var(--gold2);font-size:0.65rem;display:block;margin-top:2px;}
+    .dl{display:flex;flex-direction:column;margin-bottom:14px;}
+    .di{background:rgba(255,255,255,0.7);border:1px solid var(--border);border-top:none;padding:13px 15px;cursor:pointer;}
+    .di:last-child{border-radius:0 0 7px 7px;}
+    .dy{font-family:"Shippori Mincho",serif;font-size:1rem;color:var(--red);font-weight:600;margin-bottom:3px;}
+    .dn{color:#bbb;font-size:0.76rem;font-style:italic;}
+    .dp{font-size:0.82rem;color:var(--ink2);line-height:1.6;}
 
-.lbl{display:block;font-size:.72rem;color:var(--moss2);margin-bottom:4px;font-weight:600;}
-.fn-inp{width:100%;border:none;border-bottom:1.5px solid var(--cream2);background:transparent;font-family:var(--serif);font-size:.8rem;color:var(--gold2);padding:2px 0 4px;margin-bottom:5px;outline:none;}
-.fn-inp:focus{border-bottom-color:var(--gold);}
-.ta{width:100%;border:1.5px solid var(--cream2);border-radius:6px;padding:8px 10px;font-family:var(--sans);font-size:.8rem;color:var(--ink);background:rgba(255,255,255,.8);resize:vertical;min-height:68px;line-height:1.75;outline:none;}
-.ta:focus{border-color:var(--moss3);}
-.ta-lg{min-height:120px;}
+    /* ── 検索 ── */
+    .si{flex:1;border:1.5px solid var(--border);border-radius:5px;padding:9px 12px;font-family:"Noto Serif JP",serif;font-size:0.86rem;color:var(--ink);background:rgba(245,240,232,0.9);}
+    .si:focus{outline:none;border-color:var(--red);}
 
-.btn{border:none;border-radius:8px;padding:9px 16px;font-family:var(--sans);font-size:.8rem;cursor:pointer;}
-.btn-p{background:var(--moss);color:var(--paper);}
-.btn-p:active{background:var(--moss2);}
-.btn-s{background:var(--cream);color:var(--ink2);border:1px solid var(--cream2);}
-.btn-s:active{background:var(--cream2);}
-.btn-sm{padding:6px 12px;font-size:.76rem;}
-.btn-row{display:flex;gap:8px;margin-top:10px;}
+    /* ── 写真 ── */
+    .upload-area{border:2px dashed var(--border);border-radius:7px;padding:18px;text-align:center;cursor:pointer;position:relative;transition:all 0.2s;margin-top:6px;}
+    .upload-area input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+    .upload-txt{font-size:0.8rem;color:var(--ink2);line-height:1.7;}
+    .thumb-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+    .thumb-wrap{position:relative;touch-action:none;}
+    .thumb-wrap.dragging{opacity:0.35;}
+    .thumb{width:68px;height:68px;object-fit:cover;border-radius:4px;border:1.5px solid var(--border);display:block;}
+    .thumb-del{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:17px;height:17px;font-size:9px;cursor:pointer;line-height:17px;text-align:center;padding:0;}
+    .prog{font-size:0.75rem;color:var(--gold);margin-top:6px;min-height:18px;}
+    .mo-imgs{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+    .mo-img{width:100%;max-width:100%;height:auto;border-radius:5px;border:1.5px solid var(--border);display:block;}
+    .ht{font-size:0.7rem;color:rgba(154,123,46,0.8);margin-top:3px;line-height:1.7;}
+    .mrow{display:flex;gap:6px;margin-top:6px;}
+    .mi{flex:1;border:1.5px solid var(--border);border-radius:4px;padding:7px 9px;font-family:"Noto Serif JP",serif;font-size:0.8rem;background:rgba(245,240,232,0.9);}
+    .mtag{display:flex;align-items:center;gap:6px;background:var(--ink);color:var(--washi);padding:4px 9px;border-radius:4px;font-size:0.76rem;margin-bottom:4px;}
+    .mtag a{color:var(--gold2);text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .mtag button{background:none;border:none;color:rgba(245,240,232,0.6);cursor:pointer;font-size:0.72rem;}
 
-.photo-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
-.photo-add{width:66px;height:66px;border:2px dashed var(--cream2);border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:1.3rem;color:var(--ink3);}
-.photo-add span:last-child{font-size:.58rem;}
-.photo-thumb{position:relative;width:66px;height:66px;}
-.photo-thumb img{width:66px;height:66px;object-fit:cover;border-radius:7px;border:1.5px solid var(--cream);cursor:pointer;}
-.photo-del{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:17px;height:17px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.photo-thumb.dragging{opacity:0.4;}
-.photo-thumb.drag-over{outline:2px dashed var(--gold2);border-radius:7px;}
+    /* ── バックアップ ── */
+    .bk-box{background:rgba(255,255,255,0.5);border:1px solid var(--border);border-radius:7px;padding:14px;margin-bottom:12px;}
+    .bk-ttl{font-family:"Shippori Mincho",serif;font-size:0.9rem;margin-bottom:6px;}
+    .bk-txt{font-size:0.78rem;color:var(--ink2);line-height:1.8;margin-bottom:10px;}
 
-.vtag{display:flex;align-items:center;gap:6px;background:var(--ink);color:var(--paper);padding:5px 9px;border-radius:5px;font-size:.73rem;margin-bottom:4px;}
-.vtag a{color:#c8a84e;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.vtag button{background:none;border:none;color:rgba(245,240,232,.5);cursor:pointer;}
+    /* ── モーダル ── */
+    .mo{display:none;position:fixed;inset:0;background:rgba(26,18,8,0.75);z-index:200;overflow-y:auto;padding:14px;}
+    .mo.on{display:flex;align-items:flex-start;justify-content:center;}
+    .mb{background:var(--washi);border-radius:10px;padding:24px;max-width:700px;width:100%;margin:auto;position:relative;}
+    .mc{position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--ink2);padding:4px 8px;}
+    .md{font-family:"Shippori Mincho",serif;font-size:1.3rem;color:var(--red);margin-bottom:12px;}
+    .ms{margin-bottom:12px;}
+    .ml{font-size:0.66rem;letter-spacing:0.22em;color:var(--gold);font-weight:600;margin-bottom:4px;}
+    .mt{font-size:0.86rem;line-height:1.85;color:var(--ink2);white-space:pre-wrap;}
 
-.decade-item{background:white;border:1px solid var(--cream);border-radius:8px;padding:11px 13px;margin-bottom:8px;cursor:pointer;}
-.decade-item:active{background:var(--cream);}
-.decade-item.no-rec{opacity:.55;cursor:default;}
-.dy{font-family:var(--serif);font-size:.95rem;color:var(--gold2);}
-.dt{font-size:.76rem;color:var(--ink2);line-height:1.6;margin-top:3px;}
-.dt.empty{color:var(--ink3);font-style:italic;}
+    /* ── 空・ローディング ── */
+    .es{text-align:center;padding:40px 16px;color:var(--ink2);}
+    .ei{font-size:2.5rem;margin-bottom:10px;}
+    .et{font-size:0.83rem;line-height:1.9;}
+    .loading{text-align:center;padding:34px 16px;color:var(--ink2);}
+    .spin{display:inline-block;width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:middle;margin-right:8px;}
+    @keyframes sp{to{transform:rotate(360deg);}}
 
-.search-bar{display:flex;gap:8px;margin-bottom:10px;}
-.sq{flex:1;border:1.5px solid var(--cream2);border-radius:8px;padding:8px 11px;font-size:.83rem;background:white;outline:none;}
-.sq:focus{border-color:var(--moss3);}
-.sort-bar{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.sort-bar label{font-size:.72rem;color:var(--ink3);}
-.sort-bar select{border:1px solid var(--cream2);border-radius:6px;padding:4px 8px;font-size:.74rem;background:white;color:var(--ink2);outline:none;}
-.rcount{font-size:.72rem;color:var(--ink3);margin-bottom:8px;}
-
-.ds{background:white;border:1px solid var(--cream);border-radius:var(--r);padding:14px;margin-bottom:11px;}
-.ds-ttl{font-family:var(--serif);font-size:.86rem;color:var(--moss);margin-bottom:5px;}
-.ds-desc{font-size:.74rem;color:var(--ink2);line-height:1.8;margin-bottom:8px;}
-.upload-zone{border:2px dashed var(--cream2);border-radius:7px;padding:13px;text-align:center;cursor:pointer;margin-top:6px;}
-.upload-zone:active{border-color:var(--moss3);}
-.upload-txt{font-size:.76rem;color:var(--ink3);line-height:1.7;}
-.prog{font-size:.72rem;color:var(--gold2);margin-top:6px;min-height:16px;}
-
-/* 自作カレンダーモーダル */
-#cal-mo{display:none;position:fixed;inset:0;background:rgba(44,36,22,.6);z-index:600;align-items:center;justify-content:center;padding:20px;}
-#cal-mo.on{display:flex;}
-#cal-box{background:var(--paper);border-radius:16px;padding:20px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.25);}
-.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-.cal-title{font-family:var(--serif);font-size:1rem;color:var(--moss);}
-.cal-nav{background:var(--cream);border:none;border-radius:6px;width:32px;height:32px;font-size:1rem;cursor:pointer;color:var(--ink2);}
-.cal-nav:active{background:var(--cream2);}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px;}
-.cal-wday{text-align:center;font-size:.65rem;color:var(--ink3);padding:3px 0;}
-.cal-wday:first-child{color:var(--red);}
-.cal-wday:last-child{color:#3a5a8a;}
-.cal-day{text-align:center;padding:7px 2px;font-size:.85rem;border-radius:6px;cursor:pointer;color:var(--ink);}
-.cal-day:active{background:var(--cream2);}
-.cal-day.today{background:var(--moss);color:white;font-weight:700;}
-.cal-day.selected{background:var(--gold2);color:white;}
-.cal-day.empty{cursor:default;}
-.cal-day.sun{color:var(--red);}
-.cal-day.sat{color:#3a5a8a;}
-.cal-btn-row{display:flex;gap:8px;}
-
-/* モーダル */
-#mo{display:none;position:fixed;inset:0;background:rgba(44,36,22,.6);z-index:500;align-items:flex-end;}
-#mo.on{display:flex;}
-#mo-box{background:var(--paper);border-radius:18px 18px 0 0;padding:20px 16px 40px;max-height:88vh;overflow-y:auto;width:100%;}
-.mo-date{font-family:var(--serif);font-size:1rem;color:var(--gold2);margin-bottom:10px;padding-bottom:9px;border-bottom:1px solid var(--cream2);}
-.mo-sec{margin-bottom:11px;}
-.mo-lbl{font-size:.7rem;color:var(--moss2);font-weight:700;margin-bottom:3px;}
-.mo-txt{font-size:.8rem;color:var(--ink);line-height:1.8;white-space:pre-wrap;}
-.mo-imgs{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;}
-.mo-img{width:84px;height:84px;object-fit:cover;border-radius:6px;cursor:pointer;}
-.mo-btns{display:flex;gap:8px;margin-top:14px;}
-
-#img-mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:700;align-items:center;justify-content:center;}
-#img-mo.on{display:flex;}
-#img-mo img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:8px;}
-
-#toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 18px;border-radius:20px;font-size:.76rem;z-index:800;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center;}
-#toast.show{opacity:1;}
-
-.empty-state{text-align:center;padding:36px 16px;color:var(--ink3);}
-.empty-state .ei{font-size:2.5rem;margin-bottom:10px;}
-.empty-state .et{font-size:.8rem;line-height:1.8;}
-</style>
+    /* ── トースト ── */
+    .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--ink);color:var(--washi);padding:10px 20px;border-radius:20px;font-size:0.81rem;z-index:999;transition:transform 0.3s;border-left:4px solid var(--red);white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;}
+    .toast.on{transform:translateX(-50%) translateY(0);}
+  </style>
 </head>
 <body>
 
-<div class="hd">
-  <div class="hd-title">１０年日記</div>
-  <div class="hd-date" id="hd-date"></div>
-</div>
-<nav class="nav">
-  <button class="ntab on" onclick="go('home')">🏠 ホーム</button>
-  <button class="ntab" onclick="go('write')">✏️ 書く</button>
-  <button class="ntab" onclick="go('decade')">📅 十年帖</button>
-  <button class="ntab" onclick="go('search')">🔍 検索</button>
-  <button class="ntab" onclick="go('data')">💾 データ</button>
-</nav>
-
-<!-- ホーム -->
-<div class="view on" id="view-home">
-  <div class="banner">
-    <div class="bdate">
-      <small>今日</small>
-      <strong id="td-jp"></strong>
+<!-- ━━ セットアップ画面（初回のみ）━━ -->
+<div id="setup" style="display:none;">
+  <div class="su-box">
+    <div class="su-title">１０年日記</div>
+    <div class="su-sub">初回設定</div>
+    <label class="su-lbl">GAS デプロイ URL</label>
+    <input class="su-inp" id="gas-url-inp" type="url"
+      placeholder="https://script.google.com/macros/s/…/exec"
+      autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    <div class="su-hint">
+      GAS（Diary_v8.gs）を<b>「ウェブアプリとして導入」</b>し<br>
+      ・実行するユーザー：<b>自分</b><br>
+      ・アクセスできるユーザー：<b>全員（匿名を含む）</b><br>
+      に設定した URL を貼り付けてください。<br>
+      一度設定すると次回から不要です。
     </div>
-    <button class="btn btn-p btn-sm" onclick="goWrite(null)">✏️ 今日の日記を書く</button>
+    <button class="btn btn-p" style="width:100%;padding:12px;" onclick="saveSetup()">設定して始める</button>
   </div>
-  <div class="sg">
-    <div class="sb"><div class="sn" id="s-total">—</div><div class="sl">総記録数</div></div>
-    <div class="sb"><div class="sn" id="s-year">—</div><div class="sl">今年</div></div>
-    <div class="sb"><div class="sn" id="s-streak">—</div><div class="sl">連続記録</div></div>
-    <div class="sb"><div class="sn" id="s-years">—</div><div class="sl">記録年数</div></div>
-  </div>
-  <div class="sort-bar">
-    <label>並び順：</label>
-    <select id="home-sort" onchange="renderHome()">
-      <option value="desc">新しい順</option>
-      <option value="asc">古い順</option>
-    </select>
-  </div>
-  <div class="sec">最近の日記</div>
-  <div id="recent-list"></div>
 </div>
 
-<!-- 書く -->
-<div class="view" id="view-write">
-  <div class="dnav">
-    <button class="db" onclick="chd(-1)">◀</button>
-    <div class="ddisp" id="wdd" onclick="openCal('write')">日付を選択</div>
-    <button class="db" onclick="chd(1)">▶</button>
-    <button class="db btn-sm" onclick="goWrite(null)" style="font-size:.7rem;">今日</button>
+<!-- ━━ オフラインバナー ━━ -->
+<div id="offline-banner">📡 オフライン中 — キャッシュデータを表示しています</div>
+
+<!-- ━━ メインアプリ ━━ -->
+<div id="app" style="display:none;">
+
+  <div class="hd">
+    <div class="hd-bar"></div>
+    <div class="hd-title">１０年日記</div>
+    <div class="hd-date" id="hd"></div>
   </div>
-  <div class="card">
-    <label class="lbl">📅 今日の予定・出来事</label>
-    <textarea id="wp" class="ta" rows="2" placeholder="予定、出来事など"></textarea>
+
+  <nav class="nav">
+    <button class="ntab on"  onclick="go('home')">🏠 ホーム</button>
+    <button class="ntab"     onclick="go('write')">✏️ 書く</button>
+    <button class="ntab"     onclick="go('decade')">📅 10年帖</button>
+    <button class="ntab"     onclick="go('search')">🔍 検索</button>
+    <button class="ntab"     onclick="go('data')">💾 データ管理</button>
+  </nav>
+
+  <!-- ホーム -->
+  <div id="view-home" class="view on main">
+    <div class="banner">
+      <div class="bdate"><span>今日</span><span id="td"></span></div>
+      <button class="btn btn-p btn-sm" onclick="go('write')">✏️ 今日の日記を書く</button>
+    </div>
+    <div class="sg">
+      <div class="sb"><div class="sn" id="s1">…</div><div class="sl">総記録数</div></div>
+      <div class="sb"><div class="sn" id="s2">…</div><div class="sl">今年の記録</div></div>
+      <div class="sb"><div class="sn" id="s3">…</div><div class="sl">連続記録日</div></div>
+      <div class="sb"><div class="sn" id="s4">…</div><div class="sl">記録年数</div></div>
+    </div>
+    <div class="sec">最近の日記</div>
+    <div id="rl"><div class="loading"><span class="spin"></span>読み込み中…</div></div>
   </div>
-  <div class="card">
-    <input class="fn-inp" id="f1n" type="text" value="ひとこと">
-    <textarea id="f1" class="ta" rows="2"></textarea>
-  </div>
-  <div class="card">
-    <input class="fn-inp" id="f2n" type="text" value="気づき・学び">
-    <textarea id="f2" class="ta" rows="2"></textarea>
-  </div>
-  <div class="card">
-    <input class="fn-inp" id="f3n" type="text" value="感謝したこと">
-    <textarea id="f3" class="ta" rows="2"></textarea>
-  </div>
-  <div class="card">
-    <label class="lbl">📝 日記</label>
-    <textarea id="diary-txt" class="ta ta-lg" placeholder="今日の日記を自由に…"></textarea>
-  </div>
-  <div class="card">
-    <label class="lbl">📷 写真</label>
-    <div class="photo-grid" id="photo-grid">
-      <div class="photo-add" onclick="document.getElementById('photo-input').click()">
-        <span>＋</span><span>追加</span>
+
+  <!-- 書く -->
+  <div id="view-write" class="view main">
+    <div class="card">
+      <div class="sec">日記を書く</div>
+      <div class="dnav">
+        <button class="db" onclick="chd(-1)">◀ 前日</button>
+        <div class="ddisp"><input type="date" id="wd" onchange="ld()"></div>
+        <button class="db" onclick="chd(1)">翌日 ▶</button>
+        <button class="db" onclick="st()">今日</button>
+      </div>
+      <div id="wdd" style="text-align:center;font-family:'Shippori Mincho',serif;font-size:0.85rem;color:var(--gold);margin-bottom:14px;"></div>
+      <div class="fg">
+        <div><label class="lbl">今日の予定</label><textarea id="wp" class="ta" style="min-height:75px;"></textarea></div>
+        <div>
+          <input class="fn-inp" id="f1n" type="text" value="ひとこと">
+          <textarea id="f1" class="ta" style="min-height:75px;margin-top:5px;"></textarea>
+        </div>
+        <div>
+          <input class="fn-inp" id="f2n" type="text" value="気づき・学び">
+          <textarea id="f2" class="ta" style="min-height:75px;margin-top:5px;"></textarea>
+        </div>
+        <div>
+          <input class="fn-inp" id="f3n" type="text" value="感謝したこと">
+          <textarea id="f3" class="ta" style="min-height:75px;margin-top:5px;"></textarea>
+        </div>
+        <div><label class="lbl">日記</label><textarea id="wd2" class="ta ta-lg"></textarea></div>
+        <div>
+          <label class="lbl">📷 写真（直接アップロード）</label>
+          <div class="ht">写真・チラシをGoogleドライブに自動保存。アップロード後に保存してください。</div>
+          <div class="upload-area">
+            <input type="file" id="pf" accept="image/*" multiple onchange="hp(event)">
+            <div class="upload-txt">📷 タップして写真を選択<br>複数選択可</div>
+          </div>
+          <div class="thumb-row" id="thumbs"></div>
+          <div class="prog" id="prog"></div>
+        </div>
+        <div>
+          <label class="lbl">🔗 写真リンク（外部URL）</label>
+          <div class="ht">pCloud・iCloud等の共有リンクを貼り付け</div>
+          <div id="ptags"></div>
+          <div class="mrow"><input class="mi" id="pi" type="url"><button class="btn btn-s btn-sm" onclick="ap()">追加</button></div>
+        </div>
+        <div>
+          <label class="lbl">🎬 動画リンク</label>
+          <div class="ht">共有リンクを貼り付け</div>
+          <div id="vtags"></div>
+          <div class="mrow"><input class="mi" id="vi" type="url"><button class="btn btn-s btn-sm" onclick="av()">追加</button></div>
+        </div>
+        <div class="br">
+          <button class="btn btn-s" onclick="cf()">クリア</button>
+          <button class="btn btn-p" id="sb" onclick="se()">💾 保存する</button>
+        </div>
+        <div style="height:4px;"></div>
       </div>
     </div>
-    <input type="file" id="photo-input" accept="image/*" multiple style="display:none" onchange="addPhotos(event)">
   </div>
-  <div class="card">
-    <label class="lbl">🎬 動画リンク</label>
-    <div style="display:flex;gap:7px;margin-bottom:8px;">
-      <input type="text" id="vi" style="flex:1;border:1.5px solid var(--cream2);border-radius:6px;padding:7px 9px;font-size:.78rem;background:white;outline:none;" placeholder="URLを入力">
-      <button class="btn btn-s btn-sm" onclick="addVideo()">追加</button>
-    </div>
-    <div id="vtags"></div>
-  </div>
-  <div class="btn-row" style="margin-bottom:30px;">
-    <button class="btn btn-s" onclick="clearWriteForm()">クリア</button>
-    <button class="btn btn-p" style="flex:1;" onclick="saveEntry()">💾 保存する</button>
-  </div>
-</div>
 
-<!-- 十年帖 -->
-<div class="view" id="view-decade">
-  <div class="dnav">
-    <button class="db" onclick="decChd(-1)">◀</button>
-    <div class="ddisp" id="ddd" onclick="openCal('decade')">日付を選択</div>
-    <button class="db" onclick="decChd(1)">▶</button>
-    <button class="db btn-sm" onclick="decToday()" style="font-size:.7rem;">今日</button>
+  <!-- 10年帖 -->
+  <div id="view-decade" class="view main">
+    <div class="card" style="padding:12px 15px;margin-bottom:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <button class="db" onclick="dchd(-1)">◀</button>
+      <div style="flex:1;">
+        <label class="lbl" style="display:block;margin-bottom:3px;">日付を選ぶ</label>
+        <input type="date" id="dd" class="inp" onchange="rd()">
+      </div>
+      <button class="db" onclick="dchd(1)">▶</button>
+      <button class="btn btn-p btn-sm" style="white-space:nowrap;" onclick="sdt()">今日</button>
+    </div>
+    <div id="dv"><div class="es"><div class="et">日付を選んでください</div></div></div>
   </div>
-  <div id="decade-view"></div>
-</div>
 
-<!-- 検索 -->
-<div class="view" id="view-search">
-  <div class="search-bar">
-    <input type="text" id="sq" class="sq" placeholder="キーワードで検索…" onkeydown="if(event.key==='Enter')doSearch()">
-    <button class="btn btn-p btn-sm" onclick="doSearch()">検索</button>
+  <!-- 検索 -->
+  <div id="view-search" class="view main">
+    <div style="display:flex;gap:8px;margin-bottom:13px;">
+      <input class="si" id="sq" type="text" placeholder="キーワードで検索…">
+      <button class="btn btn-p btn-sm" onclick="ds()">検索</button>
+    </div>
+    <div id="rc" style="font-size:0.73rem;color:var(--gold);margin-bottom:10px;"></div>
+    <div id="sr"></div>
   </div>
-  <div class="sort-bar">
-    <label>並び順：</label>
-    <select id="search-sort" onchange="doSearch()">
-      <option value="desc">新しい順</option>
-      <option value="asc">古い順</option>
-    </select>
-  </div>
-  <div class="rcount" id="rc"></div>
-  <div id="sr"></div>
-</div>
 
-<!-- データ管理 -->
-<div class="view" id="view-data">
-  <div class="ds">
-    <div class="ds-ttl">🔗 GAS API URL設定</div>
-    <div class="ds-desc">GASのデプロイURLを入力すると、スプレッドシートと同期できます。</div>
-    <input type="text" id="gas-url-input" style="width:100%;border:1.5px solid var(--cream2);border-radius:6px;padding:8px 10px;font-size:.76rem;background:white;outline:none;margin-bottom:8px;" placeholder="https://script.google.com/macros/s/...">
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-p btn-sm" onclick="saveGasUrl()">💾 URLを保存</button>
-      <button class="btn btn-s btn-sm" onclick="testGasUrl()">🔍 接続テスト</button>
+  <!-- データ管理 -->
+  <div id="view-data" class="view main">
+    <div class="card">
+      <div class="sec">データ管理・バックアップ</div>
+      <div class="fg">
+        <div class="bk-box">
+          <div class="bk-ttl">📤 CSVインポート</div>
+          <div class="bk-txt">書き出したCSVファイルを読み込みます。既存データは保持され、新しいデータが追加・更新されます。</div>
+          <div class="upload-area" style="padding:12px;">
+            <input type="file" id="import-file" accept=".csv" onchange="doImport(event)">
+            <div class="upload-txt">📂 CSVファイルを選択してインポート</div>
+          </div>
+          <div class="prog" id="import-prog"></div>
+        </div>
+        <div class="bk-box">
+          <div class="bk-ttl">📥 CSV書き出し</div>
+          <div class="bk-txt">全データをCSVとしてダウンロードします。Excelで開けます。</div>
+          <button class="btn btn-p btn-sm" onclick="dlCSV()">📥 CSVをダウンロード</button>
+        </div>
+        <div class="bk-box">
+          <div class="bk-ttl">☁️ Googleドライブへバックアップ</div>
+          <div class="bk-txt">今すぐドライブのバックアップフォルダにCSVを保存します。</div>
+          <button class="btn btn-s btn-sm" onclick="bkDrive()">☁️ 今すぐバックアップ</button>
+        </div>
+        <div class="bk-box">
+          <div class="bk-ttl">⏰ 自動バックアップ設定</div>
+          <div class="bk-txt">毎日午前3時に自動バックアップします（一度設定すれば自動で動きます）。</div>
+          <button class="btn btn-s btn-sm" onclick="setAuto()">⏰ 自動バックアップを設定する</button>
+        </div>
+        <div class="bk-box">
+          <div class="bk-ttl">⚙️ GAS URL を変更</div>
+          <div class="bk-txt">接続先のGASデプロイURLを変更します。</div>
+          <button class="btn btn-s btn-sm" onclick="resetUrl()">⚙️ GAS URL を再設定</button>
+        </div>
+        <div class="bk-box">
+          <div class="bk-ttl">🖨️ 印刷・PDF保存</div>
+          <div class="bk-txt">iPhoneなら共有ボタン →「PDFを作成」で保存できます。</div>
+          <button class="btn btn-s btn-sm" onclick="window.print()">🖨️ 印刷する</button>
+        </div>
+      </div>
     </div>
-    <div class="prog" id="gas-url-prog"></div>
   </div>
-  <div class="ds">
-    <div class="ds-ttl">☁️ GASと同期</div>
-    <div class="ds-desc">GASのスプレッドシートからデータを取得してIndexedDBに保存します。</div>
-    <button class="btn btn-p btn-sm" onclick="syncFromGas()">📥 GASからデータを取得</button>
-    <div class="prog" id="sync-prog"></div>
-  </div>
-  <div class="ds">
-    <div class="ds-ttl">📥 CSVインポート</div>
-    <div class="ds-desc">GAS版で書き出したCSVを読み込みます。同じ日付のデータは上書き更新されます。</div>
-    <div class="upload-zone" onclick="document.getElementById('csv-in').click()">
-      <div class="upload-txt">📂 CSVファイルを選択</div>
-    </div>
-    <input type="file" id="csv-in" accept=".csv" style="display:none" onchange="importCSV(event)">
-    <div class="prog" id="csv-prog"></div>
-  </div>
-  <div class="ds">
-    <div class="ds-ttl">📥 JSONインポート</div>
-    <div class="ds-desc">別端末で書き出したJSONを読み込みます。同じ日付のデータは上書き更新されます。</div>
-    <div class="upload-zone" onclick="document.getElementById('json-in').click()">
-      <div class="upload-txt">📂 JSONファイルを選択</div>
-    </div>
-    <input type="file" id="json-in" accept=".json" style="display:none" onchange="importJSON(event)">
-    <div class="prog" id="json-prog"></div>
-  </div>
-  <div class="ds">
-    <div class="ds-ttl">📤 CSVエクスポート</div>
-    <div class="ds-desc">全データをCSVでダウンロード。GAS版へのインポートに使えます。</div>
-    <div class="sort-bar" style="margin-bottom:8px;">
-      <label>ソート：</label>
-      <select id="csv-sort">
-        <option value="asc">日付昇順</option>
-        <option value="desc">日付降順</option>
-      </select>
-    </div>
-    <button class="btn btn-p btn-sm" onclick="exportCSV()">📥 CSVをダウンロード</button>
-  </div>
-  <div class="ds">
-    <div class="ds-ttl">📤 JSONエクスポート</div>
-    <div class="ds-desc">全データをJSONでダウンロード。別端末への移行に使えます。</div>
-    <div class="sort-bar" style="margin-bottom:8px;">
-      <label>ソート：</label>
-      <select id="json-sort">
-        <option value="asc">日付昇順</option>
-        <option value="desc">日付降順</option>
-      </select>
-    </div>
-    <button class="btn btn-p btn-sm" onclick="exportJSON()">📥 JSONをダウンロード</button>
-  </div>
-  <div class="ds">
-    <div class="ds-ttl">ℹ️ データ概要</div>
-    <div class="prog" id="data-info" style="color:var(--ink2);font-size:.78rem;">読み込み中…</div>
-  </div>
-  <div class="ds" style="border-color:#c0a0a0;">
-    <div class="ds-ttl" style="color:var(--red);">🗑️ 全データ削除</div>
-    <div class="ds-desc">⚠️ 取り消せません。先にエクスポートしてください。</div>
-    <button class="btn btn-sm" style="background:var(--red);color:white;" onclick="clearAll()">全データを削除</button>
-  </div>
-</div>
 
-<!-- 自作カレンダーモーダル -->
-<div id="cal-mo" onclick="if(event.target===this)closeCal()">
-  <div id="cal-box">
-    <div class="cal-header">
-      <button class="cal-nav" onclick="calMove(-1)">◀</button>
-      <div class="cal-title" id="cal-title"></div>
-      <button class="cal-nav" onclick="calMove(1)">▶</button>
-    </div>
-    <div class="cal-grid" id="cal-grid"></div>
-    <div class="cal-btn-row">
-      <button class="btn btn-s btn-sm" style="flex:1;" onclick="closeCal()">キャンセル</button>
-      <button class="btn btn-p btn-sm" style="flex:1;" onclick="calConfirm()">決定</button>
+  <!-- モーダル -->
+  <div class="mo" id="mo">
+    <div class="mb">
+      <button class="mc" onclick="cm()">✕</button>
+      <div id="mc2"></div>
     </div>
   </div>
-</div>
 
-<!-- 閲覧モーダル -->
-<div id="mo" onclick="if(event.target===this)closeMo()">
-  <div id="mo-box"><div id="mo-content"></div></div>
-</div>
+  <!-- トースト -->
+  <div class="toast" id="toast"></div>
 
-<!-- 画像拡大 -->
-<div id="img-mo" onclick="this.classList.remove('on')">
-  <img id="img-mo-img" src="" alt="">
-</div>
-
-<div id="toast"></div>
+</div><!-- /#app -->
 
 <script>
-/* ============================================================
-   IndexedDB
-============================================================ */
-const DB_NAME='DiaryDB',DB_VER=1,STORE='entries';
-let db;
-function openDB(){
-  return new Promise((res,rej)=>{
-    const req=indexedDB.open(DB_NAME,DB_VER);
-    req.onupgradeneeded=e=>e.target.result.createObjectStore(STORE,{keyPath:'date'});
-    req.onsuccess=e=>{db=e.target.result;res(db);};
-    req.onerror=e=>rej(e.target.error);
+// ========================================================
+// 設定
+// ========================================================
+const URL_KEY   = 'diary10_gas_url';
+const CACHE_KEY = 'diary10_cache_v2';
+
+let GAS_URL = localStorage.getItem(URL_KEY) || '';
+let all = [], vl = [], pl = [], pids = [];
+
+// ========================================================
+// セットアップ
+// ========================================================
+function saveSetup() {
+  const val = (document.getElementById('gas-url-inp').value || '').trim();
+  if (!val.startsWith('https://')) { alert('正しいURLを入力してください'); return; }
+  GAS_URL = val;
+  localStorage.setItem(URL_KEY, val);
+  showApp();
+}
+
+function resetUrl() {
+  if (!confirm('GAS URLを再設定しますか？')) return;
+  localStorage.removeItem(URL_KEY);
+  location.reload();
+}
+
+function showSetup() {
+  document.getElementById('setup').style.display = 'flex';
+  document.getElementById('app').style.display   = 'none';
+}
+function showApp() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display   = 'block';
+  initApp();
+}
+
+// ========================================================
+// API 通信層  ─  iOS Safari 対応
+// GETはJSONP（scriptタグ）、書き込みはfetch POST
+// ========================================================
+
+/** GET / JSONP ─ CORSを回避、iOS Safari で確実動作 */
+function apiGet(action, params) {
+  params = params || {};
+  return new Promise(function(resolve, reject) {
+    var id  = '_d' + Date.now() + Math.random().toString(36).slice(2, 5);
+    var el  = null;
+    var timer = setTimeout(function() {
+      cleanup();
+      reject(new Error('タイムアウト（30秒）—— GAS URL・デプロイ設定を確認してください'));
+    }, 30000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[id];
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }
+
+    window[id] = function(data) {
+      cleanup();
+      if (data && data.error) reject(new Error(data.error));
+      else resolve(data);
+    };
+
+    el = document.createElement('script');
+    el.onerror = function() { cleanup(); reject(new Error('通信エラー')); };
+    var url = new URL(GAS_URL);
+    url.searchParams.set('action', action);
+    url.searchParams.set('callback', id);
+    Object.keys(params).forEach(function(k) { url.searchParams.set(k, String(params[k])); });
+    el.src = url.toString();
+    document.head.appendChild(el);
   });
 }
-const txs=(m)=>db.transaction(STORE,m).objectStore(STORE);
-function dbGet(d){return new Promise((r,j)=>{const q=txs('readonly').get(d);q.onsuccess=()=>r(q.result);q.onerror=e=>j(e.target.error);});}
-function dbPut(e){return new Promise((r,j)=>{const q=txs('readwrite').put(e);q.onsuccess=()=>r(q.result);q.onerror=e=>j(e.target.error);});}
-function dbGetAll(){return new Promise((r,j)=>{const q=txs('readonly').getAll();q.onsuccess=()=>r(q.result);q.onerror=e=>j(e.target.error);});}
-function dbClear(){return new Promise((r,j)=>{const q=txs('readwrite').clear();q.onsuccess=()=>r();q.onerror=e=>j(e.target.error);});}
 
-/* ============================================================
-   ユーティリティ
-============================================================ */
-const WD=['日','月','火','水','木','金','土'];
-function today(){const d=new Date();return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;}
-function p2(n){return String(n).padStart(2,'0');}
-function toJP(s){if(!s)return '';const d=new Date(s+'T00:00:00');return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}）`;}
-function normDate(raw){
-  if(!raw)return '';
-  const s=String(raw).trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
-  const p=new Date(s);
-  if(isNaN(p))return '';
-  return `${p.getFullYear()}-${p2(p.getMonth()+1)}-${p2(p.getDate())}`;
-}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function toast(msg,ms=2800){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),ms);
-}
-function dl(c,n,m){const a=document.createElement('a');a.href='data:'+m+';charset=utf-8,'+encodeURIComponent(c);a.download=n;a.click();}
+/** POST ─ 書き込み用（application/x-www-form-urlencoded → CORSプリフライト不要）*/
+function apiPost(action, params) {
+  params = params || {};
+  var body = new URLSearchParams();
+  body.set('action', action);
+  Object.keys(params).forEach(function(k) { body.set(k, String(params[k])); });
 
-/* ============================================================
-   自作カレンダー
-============================================================ */
-let calTarget='write'; // 'write' or 'decade'
-let calYear,calMonth,calSelected;
+  /* 30秒タイムアウト（iOS SafariでfetchがGASリダイレクトで止まる対策） */
+  var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = controller ? setTimeout(function() { controller.abort(); }, 30000) : null;
+  var opts = { method: 'POST', body: body, redirect: 'follow' };
+  if (controller) opts.signal = controller.signal;
 
-function openCal(target){
-  calTarget=target;
-  const base=target==='write'?writeDate:decadeDate;
-  const d=base?new Date(base+'T00:00:00'):new Date();
-  calYear=d.getFullYear();
-  calMonth=d.getMonth();
-  calSelected=base||today();
-  renderCal();
-  document.getElementById('cal-mo').classList.add('on');
+  return fetch(GAS_URL, opts)
+    .then(function(r) {
+      if (timer) clearTimeout(timer);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(d) {
+      if (d && d.error) throw new Error(d.error);
+      return d;
+    })
+    .catch(function(err) {
+      if (timer) clearTimeout(timer);
+      if (err && err.name === 'AbortError') throw new Error('通信タイムアウト（30秒）');
+      throw err;
+    });
 }
-function closeCal(){document.getElementById('cal-mo').classList.remove('on');}
-function calMove(d){
-  calMonth+=d;
-  if(calMonth<0){calMonth=11;calYear--;}
-  if(calMonth>11){calMonth=0;calYear++;}
-  renderCal();
+
+// ========================================================
+// オフライン
+// ========================================================
+function syncOnline() {
+  var b = document.getElementById('offline-banner');
+  if (b) b.classList.toggle('show', !navigator.onLine);
 }
-function renderCal(){
-  document.getElementById('cal-title').textContent=`${calYear}年${calMonth+1}月`;
-  const first=new Date(calYear,calMonth,1).getDay();
-  const last=new Date(calYear,calMonth+1,0).getDate();
-  const td=today();
-  let html='';
-  // 曜日ヘッダー
-  ['日','月','火','水','木','金','土'].forEach((w,i)=>{
-    html+=`<div class="cal-wday">${w}</div>`;
+window.addEventListener('online',  syncOnline);
+window.addEventListener('offline', syncOnline);
+
+// ========================================================
+// ユーティリティ
+// ========================================================
+function td() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function fj(s) {
+  if (!s) return '';
+  var d = new Date(s + 'T00:00:00');
+  var w = ['日','月','火','水','木','金','土'];
+  return d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日（' + w[d.getDay()] + '）';
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(m) {
+  var t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('on');
+  setTimeout(function() { t.classList.remove('on'); }, 2800);
+}
+
+// ========================================================
+// ナビゲーション
+// ========================================================
+function go(id) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('on'); });
+  document.querySelectorAll('.ntab').forEach(function(t) { t.classList.remove('on'); });
+  document.getElementById('view-' + id).classList.add('on');
+  var m = {home:0, write:1, decade:2, search:3, data:4};
+  if (m[id] !== undefined) document.querySelectorAll('.ntab')[m[id]].classList.add('on');
+  window.scrollTo(0, 0);
+  if (id === 'home')   rh();
+  if (id === 'decade') sdt();
+}
+
+// ========================================================
+// ホーム
+// ========================================================
+function rh() {
+  // キャッシュがあれば即表示
+  var cache = localStorage.getItem(CACHE_KEY);
+  if (cache) { try { all = JSON.parse(cache); renderHome(all); } catch(e){} }
+  else { document.getElementById('rl').innerHTML = '<div class="loading"><span class="spin"></span>読み込み中…</div>'; }
+
+  if (!navigator.onLine) { syncOnline(); return; }
+
+  apiGet('getAllEntries')
+    .then(function(data) {
+      all = data || [];
+      localStorage.setItem(CACHE_KEY, JSON.stringify(all));
+      renderHome(all);
+    })
+    .catch(function(err) {
+      if (!all.length) {
+        document.getElementById('rl').innerHTML = '<div class="es"><div class="et">エラー: ' + esc(err.message) + '</div></div>';
+      } else {
+        toast('⚠️ ' + err.message + '（キャッシュを表示中）');
+      }
+    });
+}
+
+function renderHome(entries) {
+  var y   = new Date().getFullYear().toString();
+  var yrs = new Set(entries.map(function(e) { return String(e.date).slice(0,4); }));
+  var sk  = 0, ck = new Date();
+  for (var i = 0; i < 3650; i++) {
+    var s = ck.getFullYear() + '-' + pad(ck.getMonth()+1) + '-' + pad(ck.getDate());
+    if (entries.find(function(e) { return e.date === s; })) { sk++; ck.setDate(ck.getDate()-1); }
+    else break;
+  }
+  document.getElementById('s1').textContent = entries.length;
+  document.getElementById('s2').textContent = entries.filter(function(e) { return String(e.date).startsWith(y); }).length;
+  document.getElementById('s3').textContent = sk;
+  document.getElementById('s4').textContent = yrs.size;
+
+  var rc = entries.slice().sort(function(a,b) { return b.date > a.date ? 1 : -1; }).slice(0, 10);
+  document.getElementById('rl').innerHTML = rc.length
+    ? rc.map(mkCard).join('')
+    : '<div class="es"><div class="ei">📔</div><div class="et">まだ日記がありません。</div></div>';
+}
+
+function mkCard(e) {
+  var pv = e.diary || e.plan || e.f1 || e.f2 || e.f3 || '';
+  var hi = e.photoIds && e.photoIds !== 'null' && e.photoIds.replace(/\|/g,'').length > 2;
+  return '<div class="ec" onclick="om(\'' + e.date + '\')">' +
+    '<div class="ed">' + fj(e.date) + '</div>' +
+    (pv ? '<div class="ep">' + esc(pv) + '</div>' : '') +
+    (hi ? '<div style="font-size:0.7rem;color:var(--gold);margin-top:3px;">📷 写真あり</div>' : '') +
+    '</div>';
+}
+
+// ========================================================
+// 書くビュー
+// ========================================================
+function chd(d) {
+  var dt = new Date(document.getElementById('wd').value + 'T00:00:00');
+  dt.setDate(dt.getDate() + d);
+  document.getElementById('wd').value = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+  ld();
+}
+function st() { document.getElementById('wd').value = td(); ld(); }
+function udd() { document.getElementById('wdd').textContent = fj(document.getElementById('wd').value); }
+
+function ld() {
+  udd();
+  var dt = document.getElementById('wd').value;
+  // キャッシュから先に表示
+  var cached = all.find(function(e) { return e.date === dt; });
+  if (cached) fillForm(cached);
+  else clearFields();
+
+  // GASから最新取得
+  apiGet('getEntry', {date: dt})
+    .then(function(e) { if (e) fillForm(e); })
+    .catch(function() {}); // キャッシュで十分
+}
+
+function fillForm(e) {
+  document.getElementById('wp').value  = e.plan  || '';
+  document.getElementById('f1n').value = e.f1n   || 'ひとこと';
+  document.getElementById('f1').value  = e.f1    || '';
+  document.getElementById('f2n').value = e.f2n   || '気づき・学び';
+  document.getElementById('f2').value  = e.f2    || '';
+  document.getElementById('f3n').value = e.f3n   || '感謝したこと';
+  document.getElementById('f3').value  = e.f3    || '';
+  document.getElementById('wd2').value = e.diary || '';
+  pl   = e.photoUrl && e.photoUrl !== 'null' ? e.photoUrl.split('|').map(function(s){return s.trim();}).filter(Boolean) : [];
+  vl   = e.video    && e.video    !== 'null' ? e.video.split('|').map(function(s){return s.trim();}).filter(Boolean) : [];
+  pids = e.photoIds && e.photoIds !== 'null' ? e.photoIds.split('|').map(function(s){return s.trim();}).filter(Boolean) : [];
+  rvt(); rpt(); rth();
+}
+
+function clearFields() {
+  ['wp','f1','f2','f3','wd2'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('f1n').value = 'ひとこと';
+  document.getElementById('f2n').value = '気づき・学び';
+  document.getElementById('f3n').value = '感謝したこと';
+  vl = []; pl = []; pids = [];
+  rvt(); rpt(); rth();
+  document.getElementById('prog').textContent = '';
+}
+function cf() { clearFields(); }
+
+// ========================================================
+// 写真アップロード（クライアント側リサイズ付き）
+// ========================================================
+function resizeImg(file, maxPx, q) {
+  return new Promise(function(res) {
+    var img = new Image();
+    var u   = URL.createObjectURL(file);
+    img.onload = function() {
+      URL.revokeObjectURL(u);
+      var w = img.width, h = img.height;
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else       { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      var cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      cv.toBlob(function(blob) { res(blob); }, 'image/jpeg', q);
+    };
+    img.onerror = function() { URL.revokeObjectURL(u); res(file); };
+    img.src = u;
   });
-  // 空白
-  for(let i=0;i<first;i++)html+=`<div class="cal-day empty"></div>`;
-  // 日付
-  for(let d=1;d<=last;d++){
-    const s=`${calYear}-${p2(calMonth+1)}-${p2(d)}`;
-    const dow=(first+d-1)%7;
-    let cls='cal-day';
-    if(dow===0)cls+=' sun';
-    if(dow===6)cls+=' sat';
-    if(s===td)cls+=' today';
-    if(s===calSelected)cls+=' selected';
-    html+=`<div class="${cls}" onclick="calSelect('${s}')">${d}</div>`;
-  }
-  document.getElementById('cal-grid').innerHTML=html;
-}
-function calSelect(s){
-  calSelected=s;
-  renderCal();
-}
-function calConfirm(){
-  if(!calSelected)return;
-  closeCal();
-  if(calTarget==='write'){
-    writeDate=calSelected;
-    document.getElementById('wdd').textContent=toJP(calSelected);
-    loadEntry();
-  } else {
-    decadeDate=calSelected;
-    document.getElementById('ddd').textContent=toJP(calSelected);
-    renderDecade();
-  }
 }
 
-/* ============================================================
-   初期化
-============================================================ */
-let allEntries=[];
-async function init(){
-  await openDB();
-  allEntries=await dbGetAll();
-  renderHeader();
-  renderHome();
-  setInterval(renderHeader,60000);
-}
-function renderHeader(){
-  const d=new Date();
-  document.getElementById('hd-date').innerHTML=`${d.getFullYear()}.${p2(d.getMonth()+1)}.${p2(d.getDate())}<br>${WD[d.getDay()]}曜日`;
-  document.getElementById('td-jp').textContent=toJP(today());
+function hp(ev) {
+  var files = Array.from(ev.target.files);
+  if (!files.length) return;
+  var prog = document.getElementById('prog');
+  var done = 0;
+  prog.textContent = '準備中…';
+
+  files.forEach(function(f) {
+    resizeImg(f, 1200, 0.75).then(function(blob) {
+      var r = new FileReader();
+      r.onload = function(e) {
+        var b64 = e.target.result.split(',')[1];
+        prog.textContent = 'アップロード中… ' + done + '/' + files.length;
+        apiPost('uploadPhoto', { base64Data: b64, fileName: f.name, mimeType: 'image/jpeg' })
+          .then(function(d) {
+            if (d && d.id) { pids.push(d.id); rth(); }
+            done++;
+            if (done === files.length) prog.textContent = '✓ ' + done + '枚アップロード完了';
+          })
+          .catch(function(err) {
+            done++;
+            prog.textContent = 'エラー: ' + err.message;
+          });
+      };
+      r.readAsDataURL(blob);
+    });
+  });
+  ev.target.value = '';
 }
 
-/* ============================================================
-   タブ
-============================================================ */
-const TABS=['home','write','decade','search','data'];
-function go(tab){
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
-  document.querySelectorAll('.ntab').forEach(b=>b.classList.remove('on'));
-  document.getElementById('view-'+tab).classList.add('on');
-  document.querySelectorAll('.ntab')[TABS.indexOf(tab)].classList.add('on');
-  window.scrollTo(0,0);
-  if(tab==='home')renderHome();
-  if(tab==='decade')renderDecade();
-  if(tab==='data')renderDataInfo();
+function rth() {
+  var c = document.getElementById('thumbs');
+  c.innerHTML = pids.map(function(id, i) {
+    return '<div class="thumb-wrap" data-i="' + i + '">' +
+      '<img class="thumb" src="https://drive.google.com/thumbnail?id=' + id + '">' +
+      '<button class="thumb-del" onclick="rdp(' + i + ')">✕</button>' +
+      '</div>';
+  }).join('');
+  Array.from(c.querySelectorAll('.thumb-wrap')).forEach(function(el) {
+    el.addEventListener('touchstart', function() {
+      window._di = parseInt(this.dataset.i);
+      window._de = this;
+      this.classList.add('dragging');
+    }, {passive:true});
+    el.addEventListener('touchend', function(e) {
+      if (!window._de) return;
+      var t = e.changedTouches[0];
+      var tgt = document.elementFromPoint(t.clientX, t.clientY);
+      var wrap = tgt && tgt.closest('.thumb-wrap');
+      if (wrap && wrap !== window._de) {
+        var to = parseInt(wrap.dataset.i);
+        pids.splice(to, 0, pids.splice(window._di, 1)[0]);
+      }
+      window._de.classList.remove('dragging'); window._de = null; rth();
+    }, {passive:true});
+  });
 }
+function rdp(i) { pids.splice(i,1); rth(); }
 
-/* ============================================================
-   ホーム
-============================================================ */
-async function renderHome(){
-  allEntries=await dbGetAll();
-  const ord=document.getElementById('home-sort').value;
-  const sorted=[...allEntries].sort((a,b)=>ord==='desc'?(a.date>b.date?-1:1):(a.date>b.date?1:-1));
-  const y=new Date().getFullYear().toString();
-  const yrs=new Set(allEntries.map(e=>e.date.slice(0,4)));
-  let streak=0,ck=new Date();
-  for(let i=0;i<3650;i++){
-    const s=`${ck.getFullYear()}-${p2(ck.getMonth()+1)}-${p2(ck.getDate())}`;
-    if(allEntries.find(e=>e.date===s)){streak++;ck.setDate(ck.getDate()-1);}else break;
-  }
-  document.getElementById('s-total').textContent=allEntries.length;
-  document.getElementById('s-year').textContent=allEntries.filter(e=>e.date.startsWith(y)).length;
-  document.getElementById('s-streak').textContent=streak+'日';
-  document.getElementById('s-years').textContent=yrs.size+'年';
-  const rl=document.getElementById('recent-list');
-  if(!sorted.length){rl.innerHTML='<div class="empty-state"><div class="ei">📔</div><div class="et">まだ記録がありません<br>「書く」から始めましょう</div></div>';return;}
-  rl.innerHTML=sorted.slice(0,30).map(e=>{
-    const pv=e.diary||e.plan||e.f1||e.f2||e.f3||'';
-    const thumb=e.photos&&e.photos.length?`<img class="ec-thumb" src="${e.photos[0].dataUrl}" onclick="viewImg('${e.photos[0].dataUrl}');event.stopPropagation();">`:'';
-    return `<div class="ec" onclick="openMo('${e.date}')">
-      <div class="ec-left">
-        <div class="ed">${toJP(e.date)}</div>
-        ${pv?`<div class="ep">${esc(pv)}</div>`:''}
-        ${e.photos&&e.photos.length?`<div class="ep-badge">📷 ${e.photos.length}枚</div>`:''}
-      </div>${thumb}</div>`;
+function ap() { var i=document.getElementById('pi'); if(!i.value.trim())return; pl.push(i.value.trim());i.value='';rpt(); }
+function rp(i) { pl.splice(i,1); rpt(); }
+function rpt() {
+  document.getElementById('ptags').innerHTML = pl.map(function(u,i) {
+    return '<div class="mtag">📷 <a href="'+u+'" target="_blank">'+u+'</a><button onclick="rp('+i+')">✕</button></div>';
+  }).join('');
+}
+function av() { var i=document.getElementById('vi'); if(!i.value.trim())return; vl.push(i.value.trim());i.value='';rvt(); }
+function rv(i) { vl.splice(i,1); rvt(); }
+function rvt() {
+  document.getElementById('vtags').innerHTML = vl.map(function(u,i) {
+    return '<div class="mtag">🎬 <a href="'+u+'" target="_blank">'+u+'</a><button onclick="rv('+i+')">✕</button></div>';
   }).join('');
 }
 
-/* ============================================================
-   書く
-============================================================ */
-let currentPhotos=[],currentVideos=[],writeDate='';
+// ========================================================
+// 保存
+// ========================================================
+function se() {
+  var dt = document.getElementById('wd').value;
+  if (!dt) { toast('日付を選んでください'); return; }
 
-function goWrite(date){
-  if(!date)date=today();
-  writeDate=date;
-  document.getElementById('wdd').textContent=toJP(date);
-  go('write');
-  loadEntry();
-}
-function chd(d){
-  const base=writeDate||today();
-  const dt=new Date(base+'T00:00:00');dt.setDate(dt.getDate()+d);
-  writeDate=`${dt.getFullYear()}-${p2(dt.getMonth()+1)}-${p2(dt.getDate())}`;
-  document.getElementById('wdd').textContent=toJP(writeDate);
-  loadEntry();
-}
-async function loadEntry(){
-  const dt=writeDate;if(!dt)return;
-  const e=await dbGet(dt);
-  document.getElementById('wp').value=e?e.plan||'':'';
-  document.getElementById('f1n').value=e?e.f1n||'ひとこと':'ひとこと';
-  document.getElementById('f1').value=e?e.f1||'':'';
-  document.getElementById('f2n').value=e?e.f2n||'気づき・学び':'気づき・学び';
-  document.getElementById('f2').value=e?e.f2||'':'';
-  document.getElementById('f3n').value=e?e.f3n||'感謝したこと':'感謝したこと';
-  document.getElementById('f3').value=e?e.f3||'':'';
-  document.getElementById('diary-txt').value=e?e.diary||'':'';
-  currentVideos=e&&e.video?(Array.isArray(e.video)?e.video.filter(Boolean):String(e.video).split('|').filter(Boolean)):[];
-  currentPhotos=e&&e.photos?e.photos:[];
-  renderVideoTags();renderPhotoGrid();
-}
-async function saveEntry(){
-  const dt=writeDate;if(!dt){toast('日付を選んでください');return;}
-  const entry={
-    date:dt,plan:document.getElementById('wp').value,
-    f1n:document.getElementById('f1n').value||'ひとこと',f1:document.getElementById('f1').value,
-    f2n:document.getElementById('f2n').value||'気づき・学び',f2:document.getElementById('f2').value,
-    f3n:document.getElementById('f3n').value||'感謝したこと',f3:document.getElementById('f3').value,
-    diary:document.getElementById('diary-txt').value,
-    video:[...currentVideos],photos:[...currentPhotos],
-    updatedAt:new Date().toISOString()
-  };
-  await dbPut(entry);
-  toast('✓ 保存しました');
-}
-function clearWriteForm(){
-  ['wp','f1','f2','f3','diary-txt'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('f1n').value='ひとこと';
-  document.getElementById('f2n').value='気づき・学び';
-  document.getElementById('f3n').value='感謝したこと';
-  currentVideos=[];currentPhotos=[];
-  renderVideoTags();renderPhotoGrid();
-}
-async function addPhotos(ev){
-  for(const f of ev.target.files){
-    const url=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(f);});
-    currentPhotos.push({dataUrl:url,name:f.name});
-  }
-  renderPhotoGrid();ev.target.value='';
-}
-function renderPhotoGrid(){
-  const g=document.getElementById('photo-grid');
-  g.innerHTML=`<div class="photo-add" onclick="document.getElementById('photo-input').click()"><span>＋</span><span>追加</span></div>`;
-  currentPhotos.forEach((p,i)=>{
-    const d=document.createElement('div');
-    d.className='photo-thumb';
-    d.draggable=true;
-    d.dataset.i=i;
-    d.innerHTML=`<img src="${p.dataUrl}" onclick="viewImg('${p.dataUrl}')"><button class="photo-del" onclick="event.stopPropagation();delPhoto(${i})">✕</button>`;
-    // ドラッグ（PC）
-    d.addEventListener('dragstart',()=>{d.classList.add('dragging');window._di=i;});
-    d.addEventListener('dragend',()=>{d.classList.remove('dragging');document.querySelectorAll('.photo-thumb').forEach(e=>e.classList.remove('drag-over'));});
-    d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('drag-over');});
-    d.addEventListener('dragleave',()=>d.classList.remove('drag-over'));
-    d.addEventListener('drop',e=>{
-      e.preventDefault();d.classList.remove('drag-over');
-      const to=i;if(window._di===to)return;
-      const moved=currentPhotos.splice(window._di,1)[0];
-      currentPhotos.splice(to,0,moved);renderPhotoGrid();
-    });
-    // タッチ（iPhone）
-    d.addEventListener('touchstart',()=>{window._di=i;window._dragEl=d;d.classList.add('dragging');},{passive:true});
-    d.addEventListener('touchend',e=>{
-      if(!window._dragEl)return;
-      const t=e.changedTouches[0];
-      const target=document.elementFromPoint(t.clientX,t.clientY);
-      const wrap=target&&target.closest('.photo-thumb');
-      if(wrap&&wrap!==window._dragEl){
-        const to=parseInt(wrap.dataset.i);
-        const moved=currentPhotos.splice(window._di,1)[0];
-        currentPhotos.splice(to,0,moved);
-      }
-      window._dragEl.classList.remove('dragging');window._dragEl=null;renderPhotoGrid();
-    },{passive:true});
-    g.appendChild(d);
+  /* 「追加」ボタンを押さずに入力欄にURLが残っていたら自動追加 */
+  var vi = document.getElementById('vi');
+  if (vi && vi.value.trim()) { vl.push(vi.value.trim()); vi.value = ''; rvt(); }
+  var pi = document.getElementById('pi');
+  if (pi && pi.value.trim()) { pl.push(pi.value.trim()); pi.value = ''; rpt(); }
+
+  var btn = document.getElementById('sb');
+  btn.textContent = '保存中…'; btn.disabled = true;
+
+  apiPost('saveEntry', {
+    date:     dt,
+    plan:     document.getElementById('wp').value,
+    f1n:      document.getElementById('f1n').value,
+    f1:       document.getElementById('f1').value,
+    f2n:      document.getElementById('f2n').value,
+    f2:       document.getElementById('f2').value,
+    f3n:      document.getElementById('f3n').value,
+    f3:       document.getElementById('f3').value,
+    diary:    document.getElementById('wd2').value,
+    video:    vl.join('|'),
+    photoUrl: pl.join('|'),
+    photoIds: pids.join('|')
+  })
+  .then(function() {
+    btn.textContent = '💾 保存する'; btn.disabled = false;
+    toast('✓ 保存しました');
+    // ローカルキャッシュも更新
+    var entry = {
+      date:dt, plan:document.getElementById('wp').value,
+      f1n:document.getElementById('f1n').value, f1:document.getElementById('f1').value,
+      f2n:document.getElementById('f2n').value, f2:document.getElementById('f2').value,
+      f3n:document.getElementById('f3n').value, f3:document.getElementById('f3').value,
+      diary:document.getElementById('wd2').value,
+      video:vl.join('|'), photoUrl:pl.join('|'), photoIds:pids.join('|')
+    };
+    var idx = all.findIndex(function(e) { return e.date === dt; });
+    if (idx >= 0) all[idx] = entry; else all.push(entry);
+    localStorage.setItem(CACHE_KEY, JSON.stringify(all));
+    setTimeout(function() { go('home'); }, 300);
+  })
+  .catch(function(err) {
+    btn.textContent = '💾 保存する'; btn.disabled = false;
+    toast('エラー: ' + err.message);
   });
 }
-function delPhoto(i){currentPhotos.splice(i,1);renderPhotoGrid();}
-function addVideo(){
-  const u=document.getElementById('vi').value.trim();if(!u)return;
-  currentVideos.push(u);document.getElementById('vi').value='';renderVideoTags();
-}
-function renderVideoTags(){
-  document.getElementById('vtags').innerHTML=currentVideos.map((u,i)=>
-    `<div class="vtag"><a href="${esc(u)}" target="_blank">${esc(u)}</a><button onclick="delVideo(${i})">✕</button></div>`
-  ).join('');
-}
-function delVideo(i){currentVideos.splice(i,1);renderVideoTags();}
 
-/* ============================================================
-   十年帖
-============================================================ */
-let decadeDate='';
-function decToday(){decadeDate=today();document.getElementById('ddd').textContent=toJP(decadeDate);renderDecade();}
-function decChd(d){
-  const base=decadeDate||today();
-  const dt=new Date(base+'T00:00:00');dt.setDate(dt.getDate()+d);
-  decadeDate=`${dt.getFullYear()}-${p2(dt.getMonth()+1)}-${p2(dt.getDate())}`;
-  document.getElementById('ddd').textContent=toJP(decadeDate);
-  renderDecade();
+// ========================================================
+// 10年帖
+// ========================================================
+function dchd(d) {
+  var el = document.getElementById('dd');
+  var base = el.value || td();
+  var dt = new Date(base + 'T00:00:00');
+  dt.setDate(dt.getDate() + d);
+  el.value = dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate());
+  rd();
 }
-async function renderDecade(){
-  if(!decadeDate)return;
-  allEntries=await dbGetAll();
-  const d=new Date(decadeDate+'T00:00:00');
-  const mmdd=`${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
-  const cy=d.getFullYear();
-  const same=allEntries.filter(e=>e.date.slice(5)===mmdd);
-  const byY={};same.forEach(e=>byY[parseInt(e.date.slice(0,4))]=e);
-  const minY=same.length?Math.min(...same.map(e=>parseInt(e.date.slice(0,4)))):cy;
-  let html='';
-  for(let y=cy;y>=minY;y--){
-    const e=byY[y];
-    if(!e){html+=`<div class="decade-item no-rec"><div class="dy">${y}年</div><div class="dt empty">記録なし</div></div>`;}
-    else{
-      const pv=e.diary||e.plan||e.f1||e.f2||e.f3||'';
-      html+=`<div class="decade-item" onclick="openMo('${e.date}')">
-        <div class="dy">${y}年</div>
-        <div class="dt">${pv?esc(pv.slice(0,100))+(pv.length>100?'…':''):'<span class="empty">（内容なし）</span>'}</div>
-        ${e.photos&&e.photos.length?`<div class="ep-badge" style="margin-top:4px;">📷 ${e.photos.length}枚</div>`:''}
-      </div>`;
+function sdt() { document.getElementById('dd').value = td(); rd(); }
+function rd() {
+  var ds = document.getElementById('dd').value;
+  if (!ds) return;
+  var d = new Date(ds + 'T00:00:00');
+  var m = d.getMonth()+1, dy = d.getDate(), cy = d.getFullYear();
+  var mmdd = pad(m) + '-' + pad(dy);
+  var ea   = all.filter(function(e) { return String(e.date).slice(5) === mmdd; });
+  var ey   = {};
+  ea.forEach(function(e) { ey[parseInt(e.date)] = e; });
+  var mn = ea.length ? Math.min.apply(null, ea.map(function(e){return parseInt(e.date);})) : cy;
+  var rs = Math.min(mn, cy-9);
+
+  var hh = '<div class="dh">' + m + '月' + dy + '日<span>全記録年を表示</span></div><div class="dl">';
+  for (var y = cy; y >= rs; y--) {
+    var e = ey[y];
+    if (!e) {
+      hh += '<div class="di"><div class="dy">'+y+'年</div><div class="dn">記録なし</div></div>';
+    } else {
+      var pv = e.diary||e.plan||e.f1||e.f2||e.f3||'';
+      var hasPhoto = e.photoIds && e.photoIds !== 'null' && e.photoIds.replace(/\|/g,'').length > 2;
+      hh += '<div class="di" onclick="om(\''+e.date+'\')">' +
+        '<div class="dy">'+y+'年'+(hasPhoto?' 📷':'')+'</div>' +
+        (pv ? '<div class="dp">'+esc(pv.slice(0,60))+(pv.length>60?'…':'')+'</div>' : '') +
+        '</div>';
     }
   }
-  document.getElementById('decade-view').innerHTML=html||`<div class="empty-state"><div class="ei">📅</div><div class="et">この日の記録がありません</div></div>`;
+  hh += '</div>';
+  document.getElementById('dv').innerHTML = hh;
 }
 
-/* ============================================================
-   検索
-============================================================ */
-async function doSearch(){
-  const q=document.getElementById('sq').value.trim();
-  if(!q){toast('キーワードを入力してください');return;}
-  allEntries=await dbGetAll();
-  const ql=q.toLowerCase();
-  const ord=document.getElementById('search-sort').value;
-  let res=allEntries.filter(e=>[e.plan,e.f1,e.f2,e.f3,e.diary,e.f1n,e.f2n,e.f3n].join(' ').toLowerCase().includes(ql));
-  res.sort((a,b)=>ord==='desc'?(a.date>b.date?-1:1):(a.date>b.date?1:-1));
-  document.getElementById('rc').textContent=`「${q}」：${res.length}件`;
-  const sr=document.getElementById('sr');
-  if(!res.length){sr.innerHTML='<div class="empty-state"><div class="ei">🔍</div><div class="et">見つかりませんでした</div></div>';return;}
-  sr.innerHTML=res.map(e=>{
-    const pv=e.diary||e.plan||e.f1||e.f2||e.f3||'';
-    return `<div class="ec" onclick="openMo('${e.date}')"><div class="ec-left"><div class="ed">${toJP(e.date)}</div>${pv?`<div class="ep">${esc(pv)}</div>`:''}</div></div>`;
+// ========================================================
+// 検索
+// ========================================================
+function ds() {
+  var q = document.getElementById('sq').value.trim();
+  if (!q) { toast('キーワードを入力してください'); return; }
+  var ql = q.toLowerCase();
+  var rs = all.filter(function(e) {
+    return [e.plan,e.f1,e.f2,e.f3,e.diary,e.video,e.photoUrl].join(' ').toLowerCase().indexOf(ql) >= 0;
+  }).sort(function(a,b) { return b.date > a.date ? 1 : -1; });
+  document.getElementById('rc').textContent = '「'+q+'」の結果：'+rs.length+'件';
+  document.getElementById('sr').innerHTML = rs.length
+    ? rs.map(mkCard).join('')
+    : '<div class="es"><div class="ei">🔍</div><div class="et">見つかりませんでした</div></div>';
+}
+
+// ========================================================
+// モーダル（詳細表示）
+// ========================================================
+function om(date) {
+  var e = all.find(function(x) { return x.date === date; });
+  if (!e) return;
+  var fs = [
+    {n:'今日の予定',       v:e.plan},
+    {n:e.f1n||'項目1',    v:e.f1},
+    {n:e.f2n||'項目2',    v:e.f2},
+    {n:e.f3n||'項目3',    v:e.f3},
+    {n:'日記',             v:e.diary}
+  ].filter(function(f) { return f.v; });
+
+  var imgH = (e.photoIds && e.photoIds !== 'null')
+    ? e.photoIds.split('|').filter(Boolean).map(function(id) {
+        return '<img class="mo-img" src="https://drive.google.com/thumbnail?id='+id.trim()+'&sz=w800">';
+      }).join('') : '';
+  var puH = (e.photoUrl && e.photoUrl !== 'null')
+    ? e.photoUrl.split('|').filter(Boolean).map(function(u) {
+        return '<div>📷 <a href="'+u.trim()+'" target="_blank" style="color:var(--gold2);font-size:0.8rem;">'+esc(u.trim())+'</a></div>';
+      }).join('') : '';
+  var vh = (e.video && e.video !== 'null')
+    ? e.video.split('|').filter(Boolean).map(function(u) {
+        return '<div>🎬 <a href="'+u.trim()+'" target="_blank" style="color:var(--gold2);font-size:0.8rem;">'+esc(u.trim())+'</a></div>';
+      }).join('') : '';
+
+  var hh = '<div class="md">'+fj(e.date)+'</div>';
+  hh += fs.map(function(f) {
+    return '<div class="ms"><div class="ml">'+esc(f.n)+'</div><div class="mt">'+esc(f.v)+'</div></div>';
   }).join('');
-}
+  if (imgH) hh += '<div class="ms"><div class="ml">写真</div><div class="mo-imgs">'+imgH+'</div></div>';
+  if (puH)  hh += '<div class="ms"><div class="ml">写真リンク</div>'+puH+'</div>';
+  if (vh)   hh += '<div class="ms"><div class="ml">動画リンク</div>'+vh+'</div>';
+  hh += '<div style="margin-top:14px;display:flex;gap:8px;">' +
+    '<button class="btn btn-s btn-sm" onclick="mcd(\''+e.date+'\',-1)">◀ 前日</button>' +
+    '<button class="btn btn-s btn-sm" style="flex:1;" onclick="ee(\''+e.date+'\')">✏️ 編集</button>' +
+    '<button class="btn btn-p btn-sm" style="flex:1;" onclick="cm()">閉じる</button>' +
+    '<button class="btn btn-s btn-sm" onclick="mcd(\''+e.date+'\',1)">翌日 ▶</button>' +
+    '</div>';
 
-/* ============================================================
-   モーダル
-============================================================ */
-async function openMo(date){
-  const e=await dbGet(date);if(!e)return;
-  const fields=[{n:'今日の予定',v:e.plan},{n:e.f1n||'ひとこと',v:e.f1},{n:e.f2n||'気づき・学び',v:e.f2},{n:e.f3n||'感謝したこと',v:e.f3},{n:'日記',v:e.diary}].filter(f=>f.v);
-  let html=`<div class="mo-date">${toJP(date)}</div>`;
-  html+=fields.map(f=>`<div class="mo-sec"><div class="mo-lbl">${esc(f.n)}</div><div class="mo-txt">${esc(f.v)}</div></div>`).join('');
-  if(e.photos&&e.photos.length)html+=`<div class="mo-sec"><div class="mo-lbl">写真</div><div class="mo-imgs">${e.photos.map(p=>`<img class="mo-img" src="${p.dataUrl}" onclick="viewImg('${p.dataUrl}')">`).join('')}</div></div>`;
-  const vs=Array.isArray(e.video)?e.video.filter(Boolean):(e.video?String(e.video).split('|').filter(Boolean):[]);
-  if(vs.length)html+=`<div class="mo-sec"><div class="mo-lbl">動画</div>${vs.map(u=>`<div style="margin-top:4px;">🎬 <a href="${esc(u)}" target="_blank" style="color:var(--gold2);font-size:.78rem;">${esc(u)}</a></div>`).join('')}</div>`;
-  html+=`<div class="mo-btns">
-    <button class="btn btn-s btn-sm" onclick="moChd('${date}',-1)">◀ 前日</button>
-    <button class="btn btn-s btn-sm" style="flex:1;" onclick="editEntry('${date}')">✏️ 編集</button>
-    <button class="btn btn-p btn-sm" style="flex:1;" onclick="closeMo()">閉じる</button>
-    <button class="btn btn-s btn-sm" onclick="moChd('${date}',1)">翌日 ▶</button>
-  </div>`;
-  document.getElementById('mo-content').innerHTML=html;
+  document.getElementById('mc2').innerHTML = hh;
   document.getElementById('mo').classList.add('on');
 }
-function closeMo(){document.getElementById('mo').classList.remove('on');}
-function moChd(date,d){
-  const dt=new Date(date+'T00:00:00');
-  dt.setDate(dt.getDate()+d);
-  const s=`${dt.getFullYear()}-${p2(dt.getMonth()+1)}-${p2(dt.getDate())}`;
-  openMo(s);
+function cm() { document.getElementById('mo').classList.remove('on'); }
+function mcd(date, d) {
+  var dt = new Date(date + 'T00:00:00');
+  dt.setDate(dt.getDate() + d);
+  om(dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate()));
 }
-function editEntry(date){closeMo();goWrite(date);}
-function viewImg(src){document.getElementById('img-mo-img').src=src;document.getElementById('img-mo').classList.add('on');}
+function ee(date) { cm(); document.getElementById('wd').value = date; ld(); go('write'); }
 
-/* ============================================================
-   CSVパーサー（複数行フィールド対応）
-   ダブルクォート内の改行も正しく処理する
-============================================================ */
-function parseCSVFull(text){
-  // BOM除去
-  text = text.replace(/^\uFEFF/,'');
-  const rows=[];
-  let col='', cols=[], inQ=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i];
-    const next=text[i+1];
-    if(c==='"'){
-      if(inQ&&next==='"'){col+='"';i++;} // エスケープされた"
-      else inQ=!inQ;
-    } else if(c===','&&!inQ){
-      cols.push(col);col='';
-    } else if((c==='\r'||c==='\n')&&!inQ){
-      // クォート外の改行→行末
-      if(c==='\r'&&next==='\n')i++; // \r\nを1つとして処理
-      cols.push(col);col='';
-      rows.push(cols);cols=[];
-    } else {
-      col+=c;
-    }
-  }
-  // 最後の行
-  if(col||cols.length){cols.push(col);rows.push(cols);}
-  return rows;
+// ========================================================
+// データ管理
+// ========================================================
+function doImport(ev) {
+  var f = ev.target.files[0]; if (!f) return;
+  var prog = document.getElementById('import-prog');
+  prog.textContent = '読み込み中…';
+  var r = new FileReader();
+  r.onload = function(e) {
+    apiPost('importCSV', {csvText: e.target.result})
+      .then(function(d) {
+        prog.textContent = '✓ 完了：新規'+d.created+'件、更新'+d.updated+'件';
+        toast('✓ インポート完了（新規'+d.created+'件・更新'+d.updated+'件）');
+        rh();
+      })
+      .catch(function(err) { prog.textContent = 'エラー: '+err.message; });
+  };
+  r.readAsText(f, 'UTF-8');
+  ev.target.value = '';
 }
 
-/* ============================================================
-   インポート（重複チェック付き・複数行本文対応）
-============================================================ */
-async function importCSV(ev){
-  const file=ev.target.files[0];if(!file)return;
-  ev.target.value='';
-  const prog=document.getElementById('csv-prog');
-  prog.textContent='読み込み中…';
-  try{
-    const text=await file.text();
-    const rows=parseCSVFull(text);
-    if(rows.length<2){prog.textContent='データが見つかりません';return;}
-    // 1行目はヘッダーなのでスキップ（i=1から）
-    let created=0,updated=0,skip=0;
-    for(let i=1;i<rows.length;i++){
-      const cols=rows[i];
-      if(!cols||!cols[0]||!cols[0].trim()){skip++;continue;}
-      const date=normDate(cols[0].trim());
-      if(!date){skip++;continue;}
-      const existing=await dbGet(date);
-      const entry={
-        date,
-        plan:cols[1]||'',f1n:cols[2]||'ひとこと',f1:cols[3]||'',
-        f2n:cols[4]||'気づき・学び',f2:cols[5]||'',
-        f3n:cols[6]||'感謝したこと',f3:cols[7]||'',
-        diary:cols[8]||'',
-        video:cols[9]?cols[9].split('|').filter(Boolean):[],
-        photos:existing?existing.photos||[]:[],
-        updatedAt:new Date().toISOString()
-      };
-      await dbPut(entry);
-      existing?updated++:created++;
-    }
-    prog.textContent=`✓ 新規${created}件・更新${updated}件（スキップ${skip}件）`;
-    toast(`✓ CSVインポート完了（新規${created}件・更新${updated}件）`);
-    allEntries=await dbGetAll();
-    renderHome();
-  }catch(e){prog.textContent='エラー: '+e.message;}
+function dlCSV() {
+  toast('CSV生成中…');
+  apiGet('exportCSV')
+    .then(function(r) {
+      var a = document.createElement('a');
+      a.href     = 'data:text/csv;charset=utf-8,' + encodeURIComponent(r.csv);
+      a.download = r.name + '_' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+      toast('✓ CSVをダウンロードしました');
+    })
+    .catch(function(err) { toast('エラー: '+err.message); });
 }
 
-async function importJSON(ev){
-  const file=ev.target.files[0];if(!file)return;
-  ev.target.value='';
-  const prog=document.getElementById('json-prog');
-  prog.textContent='読み込み中…';
-  try{
-    const text=await file.text();
-    const arr=JSON.parse(text.replace(/^\uFEFF/,''));
-    if(!Array.isArray(arr)){prog.textContent='配列形式のJSONではありません';return;}
-    let created=0,updated=0,skip=0;
-    for(const e of arr){
-      const date=normDate(e.date);if(!date){skip++;continue;}
-      const existing=await dbGet(date);
-      const video=Array.isArray(e.video)?e.video.filter(Boolean):(e.video?String(e.video).split('|').filter(Boolean):[]);
-      // 写真：JSONに含まれていればJSON優先、なければ既存を保持
-      const photos=Array.isArray(e.photos)&&e.photos.length>0?e.photos:(existing?existing.photos||[]:[]);
-      const entry={
-        date,plan:e.plan||'',f1n:e.f1n||'ひとこと',f1:e.f1||'',
-        f2n:e.f2n||'気づき・学び',f2:e.f2||'',
-        f3n:e.f3n||'感謝したこと',f3:e.f3||'',
-        diary:e.diary||'',video,photos,
-        updatedAt:new Date().toISOString()
-      };
-      await dbPut(entry);
-      existing?updated++:created++;
-    }
-    prog.textContent=`✓ 新規${created}件・更新${updated}件（スキップ${skip}件）`;
-    toast(`✓ JSONインポート完了（新規${created}件・更新${updated}件）`);
-    allEntries=await dbGetAll();
-    renderHome();
-  }catch(e){prog.textContent='エラー: '+e.message;}
+function bkDrive() {
+  toast('バックアップ中…');
+  apiPost('backupToDrive')
+    .then(function(r) { toast('✓ 「'+r.folder+'」に保存しました'); })
+    .catch(function(err) { toast('エラー: '+err.message); });
 }
 
-/* ============================================================
-   エクスポート
-============================================================ */
-async function exportCSV(){
-  allEntries=await dbGetAll();
-  const ord=document.getElementById('csv-sort').value;
-  const sorted=[...allEntries].sort((a,b)=>ord==='asc'?(a.date>b.date?1:-1):(a.date>b.date?-1:1));
-  const header=['日付','今日の予定','項目1名','項目1','項目2名','項目2','項目3名','項目3','日記','動画リンク','写真リンク','写真ID'];
-  const rows=[header,...sorted.map(e=>[
-    e.date,e.plan||'',e.f1n||'ひとこと',e.f1||'',
-    e.f2n||'気づき・学び',e.f2||'',e.f3n||'感謝したこと',e.f3||'',
-    e.diary||'',Array.isArray(e.video)?e.video.filter(Boolean).join('|'):(e.video||''),'',''
-  ])];
-  dl('\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),`10年日記_${today()}.csv`,'text/csv');
-  toast('✓ CSVをダウンロードしました');
-}
-async function exportJSON(){
-  allEntries=await dbGetAll();
-  const ord=document.getElementById('json-sort').value;
-  const sorted=[...allEntries].sort((a,b)=>ord==='asc'?(a.date>b.date?1:-1):(a.date>b.date?-1:1));
-  const out=sorted.map(e=>({
-    date:e.date,plan:e.plan||'',f1n:e.f1n||'ひとこと',f1:e.f1||'',
-    f2n:e.f2n||'気づき・学び',f2:e.f2||'',f3n:e.f3n||'感謝したこと',f3:e.f3||'',
-    diary:e.diary||'',
-    video:Array.isArray(e.video)?e.video.filter(Boolean):(e.video?String(e.video).split('|').filter(Boolean):[]),
-    photos:e.photos||[],updatedAt:e.updatedAt||''
-  }));
-  dl(JSON.stringify(out,null,2),`10年日記_${today()}.json`,'application/json');
-  toast('✓ JSONをダウンロードしました');
+function setAuto() {
+  apiPost('setupAutoBackup')
+    .then(function() { toast('✓ 自動バックアップを設定しました（毎日午前3時）'); })
+    .catch(function(err) { toast('エラー: '+err.message); });
 }
 
-/* ============================================================
-   データ情報・全削除
-============================================================ */
-async function renderDataInfo(){
-  allEntries=await dbGetAll();
-  const el=document.getElementById('data-info');
-  if(!allEntries.length){el.textContent='データなし';return;}
-  const dates=allEntries.map(e=>e.date).sort();
-  const withP=allEntries.filter(e=>e.photos&&e.photos.length>0).length;
-  el.textContent=`記録数：${allEntries.length}件 ／ 期間：${dates[0]} 〜 ${dates[dates.length-1]} ／ 写真付き：${withP}件`;
-}
-/* ============================================================
-   GAS API連携
-============================================================ */
-function getGasUrl(){
-  return localStorage.getItem('diary_gas_url')||'';
-}
-function saveGasUrl(){
-  const url=document.getElementById('gas-url-input').value.trim();
-  const prog=document.getElementById('gas-url-prog');
-  if(!url){prog.textContent='URLを入力してください';return;}
-  localStorage.setItem('diary_gas_url',url);
-  prog.textContent='✓ 保存しました';
-  toast('✓ GAS URLを保存しました');
-}
-async function testGasUrl(){
-  const url=getGasUrl();
-  const prog=document.getElementById('gas-url-prog');
-  if(!url){prog.textContent='先にURLを保存してください';return;}
-  prog.textContent='接続確認中…';
-  try{
-    const res=await gasApi({action:'getAllEntries'});
-    if(Array.isArray(res)){
-      prog.textContent=`✓ 接続OK（${res.length}件のデータ確認）`;
-    } else {
-      prog.textContent='エラー: '+JSON.stringify(res);
-    }
-  }catch(e){
-    prog.textContent='接続失敗: '+e.message;
-  }
-}
-async function gasApi(params){
-  const url=getGasUrl();
-  if(!url)throw new Error('GAS URLが設定されていません');
-  const qs=Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-  const res=await fetch(url+'?'+qs);
-  return await res.json();
-}
-async function syncFromGas(){
-  const prog=document.getElementById('sync-prog');
-  prog.textContent='取得中…';
-  try{
-    const entries=await gasApi({action:'getAllEntries'});
-    if(!Array.isArray(entries)){prog.textContent='エラー: '+JSON.stringify(entries);return;}
-    let count=0;
-    for(const e of entries){
-      const date=e.date;
-      if(!date)continue;
-      const existing=await dbGet(date);
-      const entry={
-        date,plan:e.plan||'',f1n:e.f1n||'ひとこと',f1:e.f1||'',
-        f2n:e.f2n||'気づき・学び',f2:e.f2||'',
-        f3n:e.f3n||'感謝したこと',f3:e.f3||'',
-        diary:e.diary||'',
-        video:e.video?String(e.video).split('|').filter(Boolean):[],
-        photos:existing?existing.photos||[]:[],
-        updatedAt:new Date().toISOString()
-      };
-      await dbPut(entry);count++;
-    }
-    prog.textContent=`✓ ${count}件を取得・保存しました`;
-    toast(`✓ GASから${count}件を同期しました`);
-    allEntries=await dbGetAll();
-    renderHome();
-  }catch(e){
-    prog.textContent='エラー: '+e.message;
-  }
-}
+// ========================================================
+// 初期化
+// ========================================================
+function initApp() {
+  var n = new Date();
+  var w = ['日','月','火','水','木','金','土'];
+  document.getElementById('hd').innerHTML =
+    n.getFullYear() + '.' + (n.getMonth()+1) + '.' + n.getDate() + '<br>' + w[n.getDay()] + '曜日';
+  document.getElementById('td').textContent = fj(td());
+  document.getElementById('wd').value = td();
+  udd(); ld(); syncOnline();
+  go('home');
 
-async function clearAll(){
-  if(!confirm('全データを削除しますか？\nこの操作は取り消せません。'))return;
-  if(!confirm('本当によろしいですか？\n先にエクスポートしましたか？'))return;
-  await dbClear();allEntries=[];
-  toast('✓ 全データを削除しました');
-  renderHome();renderDataInfo();
-}
+  // キャッシュ即時反映
+  var cache = localStorage.getItem(CACHE_KEY);
+  if (cache) { try { all = JSON.parse(cache); renderHome(all); } catch(e){} }
+  rh();
 
-/* ============================================================
-   起動
-============================================================ */
-window.addEventListener('DOMContentLoaded',()=>{
-  // GAS URL復元
-  const savedUrl=localStorage.getItem('diary_gas_url');
-  if(savedUrl)document.getElementById('gas-url-input').value=savedUrl;
-  init().then(()=>{
-    const dt=today();
-    writeDate=dt;
-    document.getElementById('wdd').textContent=toJP(dt);
-    decadeDate=dt;
-    document.getElementById('ddd').textContent=toJP(dt);
-    loadEntry();
+  document.getElementById('mo').addEventListener('click', function(e) {
+    if (e.target === this) cm();
   });
-});
-if('serviceWorker'in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+window.onload = function() {
+  if (!GAS_URL) showSetup();
+  else          showApp();
+};
+
+// ========================================================
+// Service Worker 登録
+// ========================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(function() {});
 }
 </script>
 </body>

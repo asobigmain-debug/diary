@@ -1,11 +1,11 @@
 {
-  "name": "十年日記",
-  "short_name": "十年日記",
+  "name": "10年日記",
+  "short_name": "10年日記",
   "description": "毎日の記録を10年分残す日記アプリ",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f5f0e8",
-  "theme_color": "#8b2218",
+  "theme_color": "#1a1208",
   "orientation": "portrait",
   "icons": [
     {
