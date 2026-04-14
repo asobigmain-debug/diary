@@ -278,14 +278,14 @@
 
   <!-- 10年帖 -->
   <div id="view-decade" class="view main">
-    <div style="display:flex;align-items:stretch;gap:6px;margin-bottom:10px;">
-      <button onclick="dchd(-1)" style="flex:0 0 auto;background:var(--red);color:white;border:none;border-radius:8px;padding:12px 14px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:var(--serif);">◀ 前日</button>
-      <div style="flex:1;display:flex;flex-direction:column;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;">
-        <label class="lbl" style="margin-bottom:0;">日付を選ぶ</label>
-        <input type="date" id="dd" class="inp" onchange="rd()" style="width:100%;">
-        <button class="btn btn-p btn-sm" onclick="sdt()" style="width:100%;margin-top:2px;">今日</button>
+    <div class="card" style="padding:12px 15px;margin-bottom:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <button class="db" onclick="dchd(-1)">◀</button>
+      <div style="flex:1;">
+        <label class="lbl" style="display:block;margin-bottom:3px;">日付を選ぶ</label>
+        <input type="date" id="dd" class="inp" onchange="rd()">
       </div>
-      <button onclick="dchd(1)" style="flex:0 0 auto;background:var(--red);color:white;border:none;border-radius:8px;padding:12px 14px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:var(--serif);">翌日 ▶</button>
+      <button class="db" onclick="dchd(1)">▶</button>
+      <button class="btn btn-p btn-sm" style="white-space:nowrap;" onclick="sdt()">今日</button>
     </div>
     <div id="dv"><div class="es"><div class="et">日付を選んでください</div></div></div>
   </div>
