@@ -1,59 +1,39 @@
-/* sw.js — 10年日記 Service Worker */
-const CACHE_NAME = 'diary10-v2';
-const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;700&family=Noto+Sans+JP:wght@300;400&display=swap'
-];
+const CACHE_NAME = 'diary-v4';
+const ASSETS = ['./', './index.html'];
 
-/* インストール：静的アセットをキャッシュ */
-self.addEventListener('install', function(e) {
+self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE_NAME).then(c => c.addAll(ASSETS).catch(() => {}))
   );
   self.skipWaiting();
 });
 
-/* アクティベート：古いキャッシュを削除 */
-self.addEventListener('activate', function(e) {
+self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(k) { return k !== CACHE_NAME; })
-            .map(function(k) { return caches.delete(k); })
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
 
-/* フェッチ：GASへのリクエストはキャッシュしない */
-self.addEventListener('fetch', function(e) {
-  var url = e.request.url;
-
-  /* GAS / Google API は常にネットワークから */
-  if (url.includes('script.google.com') ||
-      url.includes('googleapis.com') ||
-      url.includes('googleusercontent.com')) {
-    e.respondWith(fetch(e.request));
+self.addEventListener('fetch', e => {
+  if (!e.request.url.startsWith(self.location.origin)) return;
+  // ナビゲーションは常にネットワーク優先
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match('./index.html'))
+    );
     return;
   }
-
-  /* 静的アセット：キャッシュ優先、なければネットワーク */
+  // その他はキャッシュ優先
   e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      return cached || fetch(e.request).then(function(response) {
-        /* 正常なレスポンスのみキャッシュに追加 */
-        if (response && response.status === 200 && response.type === 'basic') {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(e.request, clone);
-          });
-        }
-        return response;
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        return res;
       });
     })
   );
