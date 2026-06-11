@@ -825,7 +825,8 @@ function rd() {
   for (var y = cy; y >= rs; y--) {
     var e = ey[y];
     if (!e) {
-      hh += '<div class="di"><div class="dy">'+y+'年</div><div class="dn">記録なし</div></div>';
+      var nd = y + '-' + pad(m) + '-' + pad(dy);
+      hh += '<div class="di" onclick="we(\''+nd+'\')" style="cursor:pointer;"><div class="dy">'+y+'年</div><div class="dn">記録なし　<span style="color:var(--red);font-size:.78rem;">✏️ タップして書く</span></div></div>';
     } else {
       var pv = e.diary||e.plan||e.f1||e.f2||e.f3||'';
       var hasPhoto = e.photoIds && e.photoIds !== 'null' && e.photoIds.replace(/\|/g,'').length > 2;
@@ -906,6 +907,7 @@ function mcd(date, d) {
   om(dt.getFullYear() + '-' + pad(dt.getMonth()+1) + '-' + pad(dt.getDate()));
 }
 function ee(date) { cm(); document.getElementById('wd').value = date; ld(); go('write'); }
+function we(date) { document.getElementById('wd').value = date; ld(); go('write'); }
 
 // ========================================================
 // データ管理
