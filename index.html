@@ -278,14 +278,14 @@
 
   <!-- 10年帖 -->
   <div id="view-decade" class="view main">
-    <div class="card" style="padding:12px 15px;margin-bottom:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <button class="db" onclick="dchd(-1)">◀</button>
-      <div style="flex:1;">
-        <label class="lbl" style="display:block;margin-bottom:3px;">日付を選ぶ</label>
-        <input type="date" id="dd" class="inp" onchange="rd()">
+    <div style="display:flex;align-items:stretch;gap:6px;margin-bottom:10px;">
+      <button onclick="dchd(-1)" style="flex:0 0 auto;background:var(--red);color:white;border:none;border-radius:8px;padding:12px 14px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:var(--serif);">◀ 前日</button>
+      <div style="flex:1;display:flex;flex-direction:column;gap:5px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;">
+        <label class="lbl" style="margin-bottom:0;">日付を選ぶ</label>
+        <input type="date" id="dd" class="inp" onchange="rd()" style="width:100%;">
+        <button class="btn btn-p btn-sm" onclick="sdt()" style="width:100%;margin-top:2px;">今日</button>
       </div>
-      <button class="db" onclick="dchd(1)">▶</button>
-      <button class="btn btn-p btn-sm" style="white-space:nowrap;" onclick="sdt()">今日</button>
+      <button onclick="dchd(1)" style="flex:0 0 auto;background:var(--red);color:white;border:none;border-radius:8px;padding:12px 14px;font-size:.85rem;font-weight:700;cursor:pointer;font-family:var(--serif);">翌日 ▶</button>
     </div>
     <div id="dv"><div class="es"><div class="et">日付を選んでください</div></div></div>
   </div>
@@ -575,17 +575,23 @@ function chd(d) {
 function st() { document.getElementById('wd').value = td(); ld(); }
 function udd() { document.getElementById('wdd').textContent = fj(document.getElementById('wd').value); }
 
+var _ldSeq = 0; // リクエスト連番（古い応答を捨てるため）
 function ld() {
   udd();
   var dt = document.getElementById('wd').value;
+  var seq = ++_ldSeq; // この読み込みの番号
   // キャッシュから先に表示
   var cached = all.find(function(e) { return e.date === dt; });
   if (cached) fillForm(cached);
   else clearFields();
 
-  // GASから最新取得
+  // GASから最新取得（応答が来た時に、まだ同じ日付を見ているときだけ反映）
   apiGet('getEntry', {date: dt})
-    .then(function(e) { if (e) fillForm(e); })
+    .then(function(e) {
+      if (seq !== _ldSeq) return;                          // 別の読み込みが始まっていたら捨てる
+      if (document.getElementById('wd').value !== dt) return; // 日付が変わっていたら捨てる
+      if (e) fillForm(e);
+    })
     .catch(function() {}); // キャッシュで十分
 }
 
@@ -643,30 +649,55 @@ function hp(ev) {
   var files = Array.from(ev.target.files);
   if (!files.length) return;
   var prog = document.getElementById('prog');
-  var done = 0;
   prog.textContent = '準備中…';
-
-  files.forEach(function(f) {
-    resizeImg(f, 1200, 0.75).then(function(blob) {
-      var r = new FileReader();
-      r.onload = function(e) {
-        var b64 = e.target.result.split(',')[1];
-        prog.textContent = 'アップロード中… ' + done + '/' + files.length;
-        apiPost('uploadPhoto', { base64Data: b64, fileName: f.name, mimeType: 'image/jpeg' })
-          .then(function(d) {
-            if (d && d.id) { pids.push(d.id); rth(); }
-            done++;
-            if (done === files.length) prog.textContent = '✓ ' + done + '枚アップロード完了';
-          })
-          .catch(function(err) {
-            done++;
-            prog.textContent = 'エラー: ' + err.message;
-          });
-      };
-      r.readAsDataURL(blob);
-    });
-  });
   ev.target.value = '';
+
+  // 1枚ずつ順番にアップロード（GASの同時リクエスト制限対策）
+  var idx = 0, okCount = 0, ngCount = 0;
+
+  function uploadOne(f) {
+    return resizeImg(f, 1200, 0.75).then(function(blob) {
+      return new Promise(function(res, rej) {
+        var r = new FileReader();
+        r.onload = function(e) { res(e.target.result.split(',')[1]); };
+        r.onerror = function() { rej(new Error('読み込み失敗')); };
+        r.readAsDataURL(blob);
+      });
+    }).then(function(b64) {
+      return tryUpload(b64, f.name, 2); // 2回までリトライ
+    });
+  }
+
+  function tryUpload(b64, name, retriesLeft) {
+    return apiPost('uploadPhoto', { base64Data: b64, fileName: name, mimeType: 'image/jpeg' })
+      .catch(function(err) {
+        if (retriesLeft > 0) {
+          prog.textContent = '再試行中… (' + (idx+1) + '/' + files.length + ')';
+          return new Promise(function(res){ setTimeout(res, 2000); })
+            .then(function(){ return tryUpload(b64, name, retriesLeft - 1); });
+        }
+        throw err;
+      });
+  }
+
+  function next() {
+    if (idx >= files.length) {
+      prog.textContent = ngCount === 0
+        ? '✓ ' + okCount + '枚アップロード完了'
+        : '✓ ' + okCount + '枚完了／' + ngCount + '枚失敗（もう一度お試しください）';
+      return;
+    }
+    var f = files[idx];
+    prog.textContent = 'アップロード中… ' + (idx+1) + '/' + files.length;
+    uploadOne(f)
+      .then(function(d) {
+        if (d && d.id) { pids.push(d.id); rth(); okCount++; }
+        else ngCount++;
+      })
+      .catch(function() { ngCount++; })
+      .then(function() { idx++; next(); });
+  }
+  next();
 }
 
 function rth() {
